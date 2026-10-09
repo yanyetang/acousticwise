@@ -181,7 +181,7 @@ Target sample rate (16 kHz default versus the native 32 kHz, from a spectrum che
 
 ## 11. Second dataset (P2) seam
 
-A second dataset needs its own `DatasetLoader`, a coarse label mapping defined in advance in config (UniqueShip classes without a clean equivalent are excluded), and its own `group` key. Evaluation reports it as a separate section. The recording hardware differs (ShipsEar is 52.7 kHz, 24-bit), so all audio goes through the same resampling. Candidates and constraints are in `docs/research_notes/Underwater vessel dataset sources/report.md` and `docs/research_notes/Open ShipsEar alternative datasets/report.md`; nothing is built for it in v1.0 P0/P1.
+A second dataset needs its own `DatasetLoader`, a coarse label mapping defined in advance in config (UniqueShip classes without a clean equivalent are excluded), and its own `group` key. Evaluation reports it as a separate section. The recording hardware differs (ShipsEar is 52.7 kHz, 24-bit), so all audio goes through the same resampling. Candidates and constraints are in `docs/dataset-reviews/underwater-vessel-dataset-sources.md` and `docs/dataset-reviews/open-shipsear-alternative-datasets.md`; nothing is built for it in v1.0 P0/P1.
 
 ## 12. Compute workflow (E5)
 

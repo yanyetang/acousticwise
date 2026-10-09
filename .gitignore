@@ -21,3 +21,6 @@ __pycache__/
 .venv/
 .pytest_cache/
 .ruff_cache/
+
+# Local Claude Code instructions (personal, not shared)
+CLAUDE.local.md

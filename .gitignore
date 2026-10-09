@@ -1,11 +1,6 @@
 # macOS
 .DS_Store
 
-# Source plan and copyrighted papers (not redistributable)
-AcousticWise v1.docx
-docs/superpowers/specs/papers/
-papers/
-
 # Data: never commit audio (see DATA.md)
 data/
 *.wav

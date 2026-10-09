@@ -22,3 +22,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+
+# Working material (planning tickets and raw research notes), kept local
+docs/wayfinder/
+docs/research_notes/

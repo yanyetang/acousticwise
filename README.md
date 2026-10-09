@@ -9,4 +9,4 @@ Status: planning, with no code or results yet. The v1.0 target is 2026-10-31.
 - Requirements: [`docs/superpowers/specs/acousticwise-v1-prd.md`](docs/superpowers/specs/acousticwise-v1-prd.md)
 - Technical design: [`docs/superpowers/specs/acousticwise-v1-technical-design.md`](docs/superpowers/specs/acousticwise-v1-technical-design.md)
 - Data provenance, licence and checksums: [`DATA.md`](DATA.md)
-- Dataset reviews: [`docs/research_notes/Underwater vessel dataset sources/report.md`](docs/research_notes/Underwater%20vessel%20dataset%20sources/report.md) and [`docs/research_notes/Open ShipsEar alternative datasets/report.md`](docs/research_notes/Open%20ShipsEar%20alternative%20datasets/report.md)
+- Dataset reviews: [`docs/dataset-reviews/underwater-vessel-dataset-sources.md`](docs/dataset-reviews/underwater-vessel-dataset-sources.md) and [`docs/dataset-reviews/open-shipsear-alternative-datasets.md`](docs/dataset-reviews/open-shipsear-alternative-datasets.md)

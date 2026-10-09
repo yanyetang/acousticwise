@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# Source plan and copyrighted papers (not redistributable)
+AcousticWise v1.docx
+docs/superpowers/specs/papers/
+
+# Data: never commit audio (see DATA.md)
+data/
+*.wav
+*.flac
+
+# Model weights (split manifests and metrics in artifacts/ stay tracked)
+artifacts/**/*.pt
+artifacts/**/*.joblib
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/

@@ -47,7 +47,7 @@ The 12 classes are: background (no vessel), cargo, dredger, fishing, other, pass
 
 The generalization claim is limited to **unseen vessels recorded by the same Strait of Georgia hydrophone network**.
 
-See `reports/Underwater vessel dataset sources.md` and `reports/Open ShipsEar alternative datasets.md` for the dataset reviews behind these decisions.
+See `docs/research_notes/Underwater vessel dataset sources/report.md` and `docs/research_notes/Open ShipsEar alternative datasets/report.md` for the dataset reviews behind these decisions.
 
 ## 2. Requirements
 

@@ -22,6 +22,8 @@ e27e57dddd6071f73625628f41b5d85ae55dee6fe30627be4ad0d6e7858354fa  allclass_5hour
 e2971023f1741951d1efda5270520953b296ed5221030ae34348ae47d0ae6b1b  README.md            (2,665 bytes)
 ```
 
+The README checksum above is for the Google Docs export (2,665 bytes). The original file on Drive is 2,564 bytes with SHA-256 `2219878b52045d5da85454d9c9804613f70b5feaa91a9891e74a373730e2c835`.
+
 ### Unzipping
 
 The archive is split. Both parts must be in one folder:
@@ -39,7 +41,9 @@ zip -s 0 allclass_5hours.zip --out allclass_5hours_joined.zip && unzip -q allcla
 
 ### How the data was handled
 
-The raw bundle was uploaded to a private Kaggle dataset and extracted in a Kaggle notebook, because of limited local disk. Features are cached on Kaggle and only the cache and the split manifest come back to the laptop (see the technical design, section 12).
+The raw bundle was uploaded to a private Kaggle dataset (`yanyetang/uniqueship-12-class-5-hours`) and extracted in a Kaggle notebook, because of limited local disk. Features are cached on Kaggle and only the cache and the split manifest come back to the laptop (see the technical design, section 12).
+
+On 2026-10-09 the Kaggle dataset was deleted by mistake and re-created from a fresh Drive download. The files were checked against the SHA-256 values above, and the dataset has a single version holding both parts (the last part uploaded as `allclass_5hours.zip.part`, because Kaggle rejects it as an invalid zip otherwise). The notebook `notebooks/kaggle_data_prep.ipynb` extracted it to 26 GB. The local copies of the zips were then deleted.
 
 ## Secondary dataset (P2): ShipsEar
 

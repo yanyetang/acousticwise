@@ -1,0 +1,15 @@
+{
+  "id": "yanyetang/uniqueship-data-prep",
+  "title": "UniqueShip data prep",
+  "code_file": "kaggle_data_prep.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": ["yanyetang/uniqueship-12-class-5-hours"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

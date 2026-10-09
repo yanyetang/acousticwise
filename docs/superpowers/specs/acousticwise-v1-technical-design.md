@@ -1,0 +1,192 @@
+# AcousticWise v1.0 — Technical Design
+
+- **Status:** Draft v2 for review (revised 2026-10-09 for UniqueShip as the primary dataset)
+- **Date:** 2026-10-09
+- **Implements:** `acousticwise-v1-prd.md` (requirement IDs below refer to it)
+- **Scope:** structure, interfaces and data flow. Values marked *provisional* are fixed after the D3 dataset report.
+
+## 1. Stack and layout
+
+Python package managed with `uv`; PyTorch for the CNN; scikit-learn for the baseline; librosa/soundfile for audio; Streamlit for the UI; pytest for tests.
+
+```
+acousticwise/
+  pyproject.toml
+  DATA.md                  # provenance, licence, checksums (D1)
+  README.md                # E4
+  configs/default.yaml     # all hyperparameters and audio settings
+  src/acousticwise/
+    data/
+      dataset.py           # Recording, DatasetLoader protocol
+      uniqueship.py        # UniqueShip loader (reads the official fold CSVs)
+      shipsear.py          # P2 only: ShipsEar loader
+      splits.py            # load official folds / generic grouped split; leakage checks
+      report.py            # dataset report (D3)
+    audio/
+      io.py                # load WAV, validate (A3, A4)
+      preprocess.py        # resample, mono, normalize, window (D2)
+      features.py          # MFCC (M1), log-mel (M2)
+    models/
+      baseline.py          # MFCC + classical classifier
+      cnn.py               # compact CNN
+    train.py               # CLI: train baseline or CNN, device auto-select
+    evaluate.py            # metrics, confusion matrix, 12- and 9-class (M4)
+    inference.py           # Predictor: the only API the app uses
+    errors.py              # typed input/inference errors
+  app/streamlit_app.py     # UI only; no ML logic
+  scripts/download_data.py # prints access instructions, verifies a user-supplied directory
+  scripts/cache_features.py# builds the feature cache (runs on Kaggle or locally)
+  tests/
+  artifacts/               # saved models and manifests (see section 5)
+```
+
+**Boundary rule (E1):** `app/` imports only `inference.py`; `train.py` and `evaluate.py` import `data/`, `audio/`, `models/`. Nothing imports `app/`. Preprocessing lives in `audio/preprocess.py` and is the single code path for training, feature caching and inference, so train/serve skew cannot occur.
+
+## 2. Data interface (the extensibility seam for B)
+
+```python
+@dataclass(frozen=True)
+class Recording:
+    id: str            # unique id of the unit being classified
+    path: Path
+    label: str         # class name
+    group: str         # leakage-safe grouping key, the unit of splitting
+    meta: dict         # dataset-specific (date, hydrophone, source fold role)
+
+class DatasetLoader(Protocol):
+    name: str
+    def recordings(self) -> list[Recording]: ...
+```
+
+**UniqueShip.** `uniqueship.py` is the only module that knows the bundle layout (`audio/<class>/<start>_<end>.wav`; `fold_k/metadata_5s_{train,validation,test}.csv`, path relative to the CSV). Here a `Recording` is one 5-second clip:
+- `id` is the clip filename stem (UTC start and end).
+- `group` is the MMSI as a string; background clips (MMSI 0) use `bg-<YYYYMMDD>`, because the dataset splits background by whole day.
+- `meta` carries the optional AIS and CTD columns. They are often missing and are never needed by the model.
+
+Several CSV columns have mixed types, so they are read with `low_memory=False` and only the core columns (`label`, `path`, `duration_sec`, `sample_rate`, `date`, `MMSI`, `hydrophone`) are relied on. The loader asserts on load that `sample_rate` is 32,000 and warns on clips under 5 s.
+
+Data comes from the dataset's Google Drive links, so `scripts/download_data.py` prints the access instructions and verifies a user-supplied directory against the checksums in `DATA.md`, instead of downloading automatically.
+
+**ShipsEar (P2).** `shipsear.py` is the only module that would know ShipsEar's file naming (`<id>__<DD_MM_YY>_<name>.wav`), its metadata and the mapping from its 11 vessel types to A–E. A recording there is a whole event, with `group` = vessel name. It reads original recordings only, never the pre-cut clips. A new dataset is a new loader plus a label-mapping config; nothing downstream changes.
+
+## 3. Data flow
+
+```
+Recording ─▶ load_wav ─▶ resample/mono/normalize ─▶ window ─▶ features ─▶ model ─▶ scores
+                                                                               │
+                      (uploaded files longer than one window: mean of softmax) ◀┘
+```
+
+**Preprocessing (D2), provisional defaults in `configs/default.yaml`:**
+- Source audio is 32 kHz, mono, 32-bit. Default target is 16 kHz (Nyquist 8 kHz), peak or RMS normalization. This is decided after a spectrum check in D3: if vessel energy matters above 8 kHz, keep 32 kHz.
+- Window 5 s. Training clips already are 5 s, so no windowing; clips under 5 s are padded in the dataset only if needed, and uploaded audio under one window is rejected, not padded. Longer uploads use hop 2.5 s.
+- MFCC: 20 coefficients plus mean/std summary per window.
+- Log-mel: 64 bands, `n_fft=1024`, hop 256, log-compressed, per-window standardization.
+
+Windows are cut **after** the split is made, so a recording's windows can only fall into one split.
+
+## 4. Splitting and leakage checks (M3)
+
+- UniqueShip ships its own five folds (grouped by MMSI; background by day). `splits.py` reads those CSVs and converts them to the manifest below. It does **not** re-split. The dataset's grouping is the leakage guarantee, and the test re-verifies it.
+- For a dataset without official folds (ShipsEar, P2), `splits.py` offers scikit-learn `StratifiedGroupKFold` on `Recording.group`, repeated over seeds, and fails loudly with class and counts if a class has too few groups for every partition.
+- Manifest: `artifacts/splits.json` stores clip ids and groups per fold and split, the fold number, and the source (official CSV or computed, with seed). It holds ids only, no audio, so it can be committed (D1). Training and evaluation load it.
+- **Leakage tests, run on every fold of the real manifest and on a synthetic fixture:** (1) the train/val/test id sets are disjoint; (2) the group sets are disjoint, so zero shared MMSI and zero shared background days; (3) no window's `recording_id` appears in more than one split. On 2026-10-09 the real bundle gave zero overlap for all of these.
+- Headline results are the mean and spread across the five folds. The single-model artifact in the app uses one named fold (set in config).
+
+## 5. Models, features and artifacts (M1, M2, M6)
+
+- **Baseline:** MFCC summary features into a scikit-learn pipeline (scaler + classifier; SVM or random forest, chosen on validation).
+- **CNN:** a compact stack of 3–4 conv blocks (conv, batch norm, ReLU, pool), global average pooling, linear head. Class-weighted cross-entropy (P1). Model selection on validation macro-F1.
+- **Device:** `train.py` picks cuda, then mps, then cpu, so the same code runs on Kaggle and on the author's Apple-silicon laptop.
+- **Seeds:** one config seed controls Python, NumPy and PyTorch RNGs; deterministic algorithms are enabled where practical. The reproducibility gate uses a ±1–2 point macro-F1 tolerance.
+- **Feature cache (E5):** `scripts/cache_features.py` runs the same preprocessing and feature code over all clips and writes MFCC summaries and log-mel arrays (float16, about 64 × 313 per clip at 16 kHz, roughly 1.7 GB for about 43,200 clips) keyed by clip id. Training reads the cache, so the 26 GB audio is only needed once. The cache is generated, never committed, and records the preprocessing config it was built with; training refuses a cache whose config does not match.
+
+Each trained model is saved as a directory:
+
+```
+artifacts/<run_id>/
+  model.pt | model.joblib
+  config.json        # full resolved config, seed, fold, library versions
+  labels.json        # ordered class names
+  splits.json        # copy of the manifest used
+  metrics.json       # val + test results
+```
+
+`Predictor.load(run_dir)` reads `config.json` so inference reproduces the exact preprocessing used in training.
+
+## 6. Inference and validation (A1–A4)
+
+```python
+class Predictor:
+    @classmethod
+    def load(cls, run_dir: Path) -> "Predictor": ...
+    def predict(self, wav_path_or_bytes) -> Prediction: ...
+
+@dataclass
+class Prediction:
+    label: str
+    scores: dict[str, float]     # "model confidence", not calibrated
+    waveform: np.ndarray         # for display
+    sr: int
+    mel: np.ndarray              # for display
+```
+
+`predict` windows the file, scores each window, and returns the mean softmax across windows.
+
+**Validation (`audio/io.py`)** raises typed errors from `errors.py`; the UI maps each to a friendly message and never shows a traceback:
+
+| Condition | Error |
+|---|---|
+| Not a readable PCM WAV, or corrupt | `UnsupportedFileError` |
+| File larger than limit | `FileTooLargeError` |
+| Shorter than one window (provisional minimum) | `AudioTooShortError` |
+| Longer than the duration limit | `AudioTooLongError` |
+| Near-silent (RMS below a threshold) | `SilentAudioError` |
+| Anything unexpected in model code | wrapped as `InferenceError` |
+
+Limits are *provisional* and set from D3.
+
+## 7. Application
+
+Single Streamlit page: file uploader, "Classify" button, result card (predicted class, bar chart of per-class model confidence labelled "not calibrated"), waveform and spectrogram plot, a note that the model was trained on one hydrophone network, and an error banner. The model run directory is set in config. One-command launch: `uv run acousticwise-app`, which wraps `streamlit run`.
+
+## 8. Evaluation (M4, M5)
+
+`evaluate.py` computes, from a run directory and its manifest:
+- accuracy, macro-F1 over all 12 classes and over the 9-class subset (dredger, pilotvessel and rescue excluded; the subset is a config list), per-class precision/recall/F1, and the confusion matrix, on the test split;
+- the number of distinct vessels behind each class in the train and test splits, printed beside each per-class score;
+- per-clip results, and per-vessel results as an additional table;
+- mean and spread across the five folds, for both models;
+- a baseline-vs-CNN comparison table written to `metrics.json` and rendered in the README.
+
+Misclassified clips are listed with their ids and groups so the P1 error analysis can pull spectrograms.
+
+## 9. Testing (E3)
+
+| Area | Tests |
+|---|---|
+| Preprocessing | Output rate, mono, shape and range on synthetic tones; resampling from several input rates; windowing counts |
+| Splits | Disjoint ids and groups on a synthetic fixture shaped like the UniqueShip CSVs; the same checks on the real manifest when the data is present; stable for a fixed seed on computed splits |
+| Loader | Parses a miniature fixture bundle; rejects a wrong sample rate |
+| Features | Expected shapes for MFCC and log-mel; cache refuses a mismatched config |
+| Inference | Loads a tiny fixture model; predicts on a synthetic WAV; scores sum to ~1 |
+| Invalid input | One test per row in the section 6 error table |
+| Reproducibility | Training for a few steps with a fixed seed twice gives the same loss (smoke test) |
+
+Tests use synthetic audio, so the suite runs without the dataset.
+
+## 10. Provisional values to settle after D3
+
+Target sample rate (16 kHz default versus the native 32 kHz, from a spectrum check); window and hop length for uploads; file size and duration limits (A4); silence threshold; the final list of classes in the 9-class subset (threshold: about 80 vessels in the training fold); which CNN fold ships in the app; whether per-vessel aggregation is meaningful.
+
+## 11. Second dataset (P2) seam
+
+A second dataset needs its own `DatasetLoader`, a coarse label mapping defined in advance in config (UniqueShip classes without a clean equivalent are excluded), and its own `group` key. Evaluation reports it as a separate section. The recording hardware differs (ShipsEar is 52.7 kHz, 24-bit), so all audio goes through the same resampling. Candidates and constraints are in `reports/Underwater vessel dataset sources.md` and `reports/Open ShipsEar alternative datasets.md`; nothing is built for it in v1.0 P0/P1.
+
+## 12. Compute workflow (E5)
+
+1. **Kaggle:** attach the bundle as a Kaggle dataset, join and unzip it into `/tmp` (the temporary disk, about 1 TB), run `cache_features.py`, and save the cache and manifest to `/kaggle/working` as notebook output.
+2. **Local:** download only the cache and the manifest (a few GB). Train, evaluate and run the app locally on the laptop; device auto-selection uses mps.
+3. **Plain path** (README): download the bundle, run `scripts/download_data.py` to verify it, run `cache_features.py` locally. Needs about 44 GB free before the zip is deleted.
+
+Kaggle's `/tmp` is wiped when a session ends, so step 1 is rerun from the zip if needed; `cache_features.py` is idempotent.

@@ -80,10 +80,10 @@ Recording ─▶ load_wav ─▶ resample/mono/normalize ─▶ window ─▶ fe
 ```
 
 **Preprocessing (D2), provisional defaults in `configs/default.yaml`:**
-- Source audio is 32 kHz, mono, 32-bit. Default target is 16 kHz (Nyquist 8 kHz), peak or RMS normalization, still provisional. The spectrum check (2026-10-09, fold 1 train, up to 200 clips per class) found the 8-16 kHz band holds only 0.3 to 7.8% of power but is 13 to 18 dB above background for most ship classes, so 16 kHz would discard real signal; the sample-rate ticket makes the final choice.
-- Window 5 s. Training clips already are 5 s, so no windowing; clips under 5 s are padded in the dataset only if needed, and uploaded audio under one window is rejected, not padded. Longer uploads use hop 2.5 s.
+- Source audio is 32 kHz, mono, 32-bit. Target rate is 32 kHz (native, Nyquist 16 kHz), set in config, with peak or RMS normalization still to be chosen. The spectrum check (2026-10-09, fold 1 train, up to 200 clips per class) found the 8-16 kHz band holds only 0.3 to 7.8% of power but is 13 to 18 dB above background for most ship classes, so 16 kHz would discard real signal. Once the baseline works, a 16 kHz versus 32 kHz comparison on validation data confirms the choice. Uploads at other rates are resampled to the target rate.
+- Window 5 s. Training clips already are 5 s, so no windowing; training clips under 5 s (minimum 4.0 s) are zero-padded to 5 s and kept; the cache build prints how many were padded, and the choice is revisited if it is more than about 1% of clips. Uploads of 4.0 s or more are zero-padded to one window in the same way; shorter uploads are rejected. Longer uploads use window 5 s and hop 2.5 s.
 - MFCC: 20 coefficients plus mean/std summary per window.
-- Log-mel: 64 bands, `n_fft=1024`, hop 256, log-compressed, per-window standardization.
+- Log-mel: 64 bands up to the Nyquist, `n_fft=2048`, hop 512 at 32 kHz (the same 64 × 313 frames per window as `n_fft=1024`, hop 256 at 16 kHz, so the cache size does not change), log-compressed, per-window standardization.
 
 Windows are cut **after** the split is made, so a recording's windows can only fall into one split.
 
@@ -101,7 +101,7 @@ Windows are cut **after** the split is made, so a recording's windows can only f
 - **CNN:** a compact stack of 3–4 conv blocks (conv, batch norm, ReLU, pool), global average pooling, linear head. Class-weighted cross-entropy (P1). Model selection on validation macro-F1.
 - **Device:** `train.py` picks cuda, then mps, then cpu, so the same code runs on Kaggle and on the author's Apple-silicon laptop.
 - **Seeds:** one config seed controls Python, NumPy and PyTorch RNGs; deterministic algorithms are enabled where practical. The reproducibility gate uses a ±1–2 point macro-F1 tolerance.
-- **Feature cache (E5):** `scripts/cache_features.py` runs the same preprocessing and feature code over all clips and writes MFCC summaries and log-mel arrays (float16, about 64 × 313 per clip at 16 kHz, roughly 1.7 GB for about 43,200 clips) keyed by clip id. Training reads the cache, so the 26 GB audio is only needed once. The cache is generated, never committed, and records the preprocessing config it was built with; training refuses a cache whose config does not match.
+- **Feature cache (E5):** `scripts/cache_features.py` runs the same preprocessing and feature code over all clips and writes MFCC summaries and log-mel arrays (float16, about 64 × 313 per clip, roughly 1.7 GB for about 43,200 clips) keyed by clip id. Training reads the cache, so the 26 GB audio is only needed once. The cache is generated, never committed, and records the preprocessing config it was built with; training refuses a cache whose config does not match.
 
 Each trained model is saved as a directory:
 
@@ -141,7 +141,7 @@ class Prediction:
 |---|---|
 | Not a readable PCM WAV, or corrupt | `UnsupportedFileError` |
 | File larger than limit | `FileTooLargeError` |
-| Shorter than one window (provisional minimum) | `AudioTooShortError` |
+| Shorter than 4.0 s | `AudioTooShortError` |
 | Longer than the duration limit | `AudioTooLongError` |
 | Near-silent (RMS below a threshold) | `SilentAudioError` |
 | Anything unexpected in model code | wrapped as `InferenceError` |
@@ -179,7 +179,7 @@ Tests use synthetic audio, so the suite runs without the dataset.
 
 ## 10. Provisional values to settle after D3
 
-Target sample rate (16 kHz default versus the native 32 kHz, from a spectrum check); window and hop length for uploads; file size and duration limits (A4); silence threshold; the final list of classes in the 9-class subset (threshold: about 80 vessels in the training fold); which CNN fold ships in the app; whether per-vessel aggregation is meaningful.
+File size and duration limits (A4); silence threshold; the final list of classes in the 9-class subset (threshold: about 80 vessels in the training fold); which CNN fold ships in the app; whether per-vessel aggregation is meaningful.
 
 ## 11. Second dataset (P2) seam
 

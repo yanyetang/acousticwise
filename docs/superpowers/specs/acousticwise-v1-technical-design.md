@@ -34,8 +34,10 @@ acousticwise/
     inference.py           # Predictor: the only API the app uses
     errors.py              # typed input/inference errors
   app/streamlit_app.py     # UI only; no ML logic
+  app/samples/             # 36 sample clips (3 per class) and manifest.csv, for the sample browser
   scripts/download_data.py # prints access instructions, verifies a user-supplied directory
   scripts/cache_features.py# builds the feature cache (runs on Kaggle or locally)
+  scripts/export_samples.py# picks the sample clips and writes their manifest (runs on Kaggle with the bundle)
   tests/
   artifacts/               # saved models and manifests (see section 5)
 ```
@@ -78,7 +80,7 @@ Recording ─▶ load_wav ─▶ resample/mono/normalize ─▶ window ─▶ fe
 ```
 
 **Preprocessing (D2), provisional defaults in `configs/default.yaml`:**
-- Source audio is 32 kHz, mono, 32-bit. Default target is 16 kHz (Nyquist 8 kHz), peak or RMS normalization. This is decided after a spectrum check in D3: if vessel energy matters above 8 kHz, keep 32 kHz.
+- Source audio is 32 kHz, mono, 32-bit. Default target is 16 kHz (Nyquist 8 kHz), peak or RMS normalization, still provisional. The spectrum check (2026-10-09, fold 1 train, up to 200 clips per class) found the 8-16 kHz band holds only 0.3 to 7.8% of power but is 13 to 18 dB above background for most ship classes, so 16 kHz would discard real signal; the sample-rate ticket makes the final choice.
 - Window 5 s. Training clips already are 5 s, so no windowing; clips under 5 s are padded in the dataset only if needed, and uploaded audio under one window is rejected, not padded. Longer uploads use hop 2.5 s.
 - MFCC: 20 coefficients plus mean/std summary per window.
 - Log-mel: 64 bands, `n_fft=1024`, hop 256, log-compressed, per-window standardization.
@@ -189,4 +191,6 @@ A second dataset needs its own `DatasetLoader`, a coarse label mapping defined i
 2. **Local:** download only the cache and the manifest (a few GB). Train, evaluate and run the app locally on the laptop; device auto-selection uses mps.
 3. **Plain path** (README): download the bundle, run `scripts/download_data.py` to verify it, run `cache_features.py` locally. Needs about 44 GB free before the zip is deleted.
 
-Kaggle's `/tmp` is wiped when a session ends, so step 1 is rerun from the zip if needed; `cache_features.py` is idempotent.
+Kaggle's `/tmp` is wiped when a session ends, so step 1 is rerun from the zip if needed; `cache_features.py` is idempotent. Unzipped copies of the audio are not kept on Kaggle: the extraction (about 30 minutes) is paid once per run, and runs are batched (cache build and sample export together) to limit repeats.
+
+**Development data.** Code and tests run on the laptop against synthetic fixtures (generated WAVs and CSVs shaped like the bundle) and the 36 sample clips in `app/samples/`. The baseline is trained locally on the full cache, not on the sample. The CNN is trained locally unless that proves too slow, then on Kaggle.

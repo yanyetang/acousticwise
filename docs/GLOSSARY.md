@@ -14,9 +14,9 @@
 
 **Leakage** — a vessel (or background day) appearing in more than one split of the same fold.
 
-**12-class score** — macro-F1 over all twelve classes; comparable with the dataset authors' published baseline.
+**12-class score** — macro-F1 over all twelve classes (those with test clips in the fold); shown beside the headline for comparison with the dataset authors' published baseline.
 
-**9-class score** — macro-F1 over the classes with enough distinct vessels to be trusted; excludes dredger, pilotvessel and rescue (final rule pending).
+**9-class score** — the headline: macro-F1 over background and every class with at least 50 distinct training vessels in every fold; excludes dredger, pilotvessel and rescue.
 
 **Model confidence** — the model's softmax score per class, not a calibrated probability.
 

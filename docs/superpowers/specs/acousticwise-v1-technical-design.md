@@ -155,12 +155,12 @@ Limits are *provisional* and set from D3.
 
 ## 7. Application
 
-Single Streamlit page: file uploader, "Classify" button, result card (predicted class, bar chart of per-class model confidence labelled "not calibrated"), waveform and spectrogram plot, a note that the model was trained on one hydrophone network, and an error banner. The model run directory is set in config. One-command launch: `uv run acousticwise-app`, which wraps `streamlit run`.
+Single Streamlit page: file uploader, "Classify" button, result card (predicted class, bar chart of per-class model confidence labelled "not calibrated"), waveform and spectrogram plot, a note that the model was trained on one hydrophone network, a few-vessels note when the top prediction is rescue, dredger or pilotvessel, and an error banner. The model run directory is set in config. One-command launch: `uv run acousticwise-app`, which wraps `streamlit run`.
 
 ## 8. Evaluation (M4, M5)
 
 `evaluate.py` computes, from a run directory and its manifest:
-- accuracy, macro-F1 over all 12 classes and over the 9-class subset (dredger, pilotvessel and rescue excluded; the subset is a config list), per-class precision/recall/F1, and the confusion matrix, on the test split;
+- accuracy, the 9-class macro-F1 (headline) and the 12-class macro-F1, per-class precision/recall/F1, and the confusion matrix, on the test split. The 9-class subset is a config list (every class with at least 50 distinct training vessels in every fold, plus background: dredger, pilotvessel and rescue are out); its score is F1 averaged over those 9 labels on the full test set from the same 12-class model (scikit-learn `labels=`). The 12-class score averages over the classes with test clips in that fold, and the classes without any are recorded beside it;
 - the number of distinct vessels behind each class in the train and test splits, printed beside each per-class score;
 - per-clip results, and per-vessel results as an additional table;
 - mean and spread across the five folds, for both models;
@@ -184,7 +184,7 @@ Tests use synthetic audio, so the suite runs without the dataset.
 
 ## 10. Provisional values to settle after D3
 
-File size and duration limits (A4); silence threshold; the final list of classes in the 9-class subset (threshold: about 80 vessels in the training fold); which CNN fold ships in the app; whether per-vessel aggregation is meaningful.
+File size and duration limits (A4); silence threshold; which CNN fold ships in the app; whether per-vessel aggregation is meaningful.
 
 ## 11. Second dataset (P2) seam
 

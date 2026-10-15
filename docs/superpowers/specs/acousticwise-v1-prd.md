@@ -41,9 +41,9 @@ The 12 classes are: background (no vessel), cargo, dredger, fishing, other, pass
 - Zero shared MMSI (vessel id) between train/validation, train/test and validation/test in every fold; zero shared background days within a fold; zero shared vessels between any two folds' test sets.
 - The bundle README's layout shows only 5 classes; the actual bundle has 12. The site's other figure of 20 kHz is wrong; the audio is 32 kHz.
 
-**Known weakness: the data is balanced by hours, not by vessels.** Distinct vessels per class in fold 1's training set: cargo 2,017; pleasurecraft 324; tug 237; fishing 190; tanker 186; sailing 169; other 135; passengership 88; rescue 18; **dredger 4; pilotvessel 1**. A model can score well on dredger or pilotvessel by memorizing one ship, and those classes' per-fold test scores rest on one or a few vessels. Hence two headline numbers:
-- **12-class macro-F1**, comparable with the dataset authors' published baseline (66.5% best, per the dataset site; not verified for this bundle).
-- **9-class macro-F1**, excluding dredger, pilotvessel and rescue. This is the figure to trust.
+**Known weakness: the data is balanced by hours, not by vessels.** Distinct vessels per class in fold 1's training set: cargo 2,017; pleasurecraft 324; tug 237; fishing 190; tanker 186; sailing 169; other 135; passengership 88; rescue 18; **dredger 4; pilotvessel 1**. A model can score well on dredger or pilotvessel by memorizing one ship, and those classes' per-fold test scores rest on one or a few vessels. Hence two numbers, with the 9-class one leading:
+- **9-class macro-F1 (headline)**: the classes with at least 50 distinct training vessels in every fold, plus background. That rule excludes rescue (at most 19), dredger (at most 5) and pilotvessel (at most 2); every other class has at least 88. It is computed from the same 12-class model, averaging F1 over the 9 classes on the full test set, so excluded-class clips predicted as a trusted class count against that class's precision. `other` has only 2 test vessels in fold 2, so its per-fold score is noisy.
+- **12-class macro-F1**, shown beside it for comparison with the dataset authors' published baseline (66.5% best, per the dataset site; not verified for this bundle, and the setup may differ). In each fold it averages over the classes that have test clips (dredger has none in folds 1 and 5, pilotvessel none in folds 3 to 5), and the missing classes are listed beside the score.
 
 The generalization claim is limited to **unseen vessels recorded by the same Strait of Georgia hydrophone network**.
 
@@ -68,7 +68,7 @@ The dataset reviews behind these decisions are kept as local research notes and 
 
 **Application**
 - **A1.** Upload a WAV and submit it for inference.
-- **A2.** Display the predicted class, per-class confidence (labeled "model confidence") and a waveform or spectrogram. The app states that the model was trained on one hydrophone network.
+- **A2.** Display the predicted class, per-class confidence (labeled "model confidence") and a waveform or spectrogram. The app states that the model was trained on one hydrophone network. All 12 classes are shown; if the top prediction is rescue, dredger or pilotvessel, the app adds a note that the class has few vessels in training and may reflect one ship rather than the type.
 - **A3.** Handle unsupported files, silence, too-short audio and inference failures with clear messages. The app never shows a stack trace.
 - **A4.** Supported input: PCM WAV, mono or stereo, at least 16-bit, within a maximum file size and minimum/maximum duration. Exact limits are set after D3.
 
@@ -113,7 +113,7 @@ The dataset reviews behind these decisions are kept as local research notes and 
 
 | Metric | Reported as |
 |---|---|
-| Macro-F1 | Baseline vs CNN, 12-class and 9-class, mean ± spread over five folds |
+| Macro-F1 | Baseline vs CNN, 9-class (headline) and 12-class, mean ± spread over five folds |
 | Accuracy | Per clip |
 | Per-class P/R/F1 | Table with vessel count per class, plus confusion matrix |
 | Variance | Across folds, and across at least 3 seeds if time allows |

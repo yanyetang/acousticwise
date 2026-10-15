@@ -80,10 +80,10 @@ Recording ─▶ load_wav ─▶ resample/mono/normalize ─▶ window ─▶ fe
 ```
 
 **Preprocessing (D2), provisional defaults in `configs/default.yaml`:**
-- Source audio is 32 kHz, mono, 32-bit. Target rate is 32 kHz (native, Nyquist 16 kHz), set in config, with peak or RMS normalization still to be chosen. The spectrum check (2026-10-09, fold 1 train, up to 200 clips per class) found the 8-16 kHz band holds only 0.3 to 7.8% of power but is 13 to 18 dB above background for most ship classes, so 16 kHz would discard real signal. Once the baseline works, a 16 kHz versus 32 kHz comparison on validation data confirms the choice. Uploads at other rates are resampled to the target rate.
+- Source audio is 32 kHz, mono, 32-bit. Target rate is 32 kHz (native, Nyquist 16 kHz), set in config. Peak, RMS or no normalization is chosen on validation data during implementation; because a gain change is a constant offset in log-mel, it is applied when features are loaded, not baked into the cache. The spectrum check (2026-10-09, fold 1 train, up to 200 clips per class) found the 8-16 kHz band holds only 0.3 to 7.8% of power but is 13 to 18 dB above background for most ship classes, so 16 kHz would discard real signal. Once the baseline works, a 16 kHz versus 32 kHz comparison on validation data confirms the choice. Uploads at other rates are resampled to the target rate.
 - Window 5 s. Training clips already are 5 s, so no windowing; training clips under 5 s (minimum 4.0 s) are zero-padded to 5 s and kept; the cache build prints how many were padded, and the choice is revisited if it is more than about 1% of clips. Uploads of 4.0 s or more are zero-padded to one window in the same way; shorter uploads are rejected. Longer uploads use window 5 s and hop 2.5 s.
-- MFCC: 20 coefficients plus mean/std summary per window.
-- Log-mel: 64 bands up to the Nyquist, `n_fft=2048`, hop 512 at 32 kHz (the same 64 × 313 frames per window as `n_fft=1024`, hop 256 at 16 kHz, so the cache size does not change), log-compressed, per-window standardization.
+- Log-mel: 64 bands up to the Nyquist, `n_fft=2048`, hop 512 at 32 kHz (the same 64 × 313 frames per window as `n_fft=1024`, hop 256 at 16 kHz, so the cache size does not change), in dB. Normalization and per-window standardization are applied on load.
+- MFCC: 20 coefficients computed from the 64-band log-mel (DCT), plus mean/std summary per window. Derived on load, so baseline settings change without rebuilding the cache.
 
 Windows are cut **after** the split is made, so a recording's windows can only fall into one split.
 
@@ -101,7 +101,12 @@ Windows are cut **after** the split is made, so a recording's windows can only f
 - **CNN:** a compact stack of 3–4 conv blocks (conv, batch norm, ReLU, pool), global average pooling, linear head. Class-weighted cross-entropy (P1). Model selection on validation macro-F1.
 - **Device:** `train.py` picks cuda, then mps, then cpu, so the same code runs on Kaggle and on the author's Apple-silicon laptop.
 - **Seeds:** one config seed controls Python, NumPy and PyTorch RNGs; deterministic algorithms are enabled where practical. The reproducibility gate uses a ±1–2 point macro-F1 tolerance.
-- **Feature cache (E5):** `scripts/cache_features.py` runs the same preprocessing and feature code over all clips and writes MFCC summaries and log-mel arrays (float16, about 64 × 313 per clip, roughly 1.7 GB for about 43,200 clips) keyed by clip id. Training reads the cache, so the 26 GB audio is only needed once. The cache is generated, never committed, and records the preprocessing config it was built with; training refuses a cache whose config does not match.
+- **Feature cache (E5):** `scripts/cache_features.py` runs the same preprocessing and feature code over all clips, once (each clip appears in all five folds, so the cache is not per fold). Training reads the cache, so the 26 GB audio is only needed once. The cache is generated and never committed. One cache per sample rate (`cache/sr32000/`, `cache/sr16000/`, both built in the same run), each holding:
+  - `logmel.npy`: one array, clips × 64 × 313, float16, un-normalized dB (about 1.7 GB for about 43,200 clips), read with memory mapping;
+  - `index.csv`: clip id → row, class, MMSI, duration, padded flag, peak level and RMS level;
+  - `meta.json`: the feature settings used (sample rate, `n_fft`, hop, mel bands, window, padding rule, dB settings), a `cache_format` number bumped by hand when feature code changes, library versions, build date, bundle checksums, the padded-clip count and the clips that failed to load with their reasons.
+
+  The **clip id** is the clip's path under `audio/` without `.wav` (for example `cargo/<start>_<end>`); the build fails if two clips share an id. A clip that cannot be read is skipped and listed in `meta.json`, and training leaves it out; the build fails if more than 0.1% of clips fail, since that points to a bug. Training compares `meta.json` with `configs/default.yaml` field by field and refuses a mismatched cache with an error naming the fields that differ.
 
 Each trained model is saved as a directory:
 
@@ -170,7 +175,7 @@ Misclassified clips are listed with their ids and groups so the P1 error analysi
 | Preprocessing | Output rate, mono, shape and range on synthetic tones; resampling from several input rates; windowing counts |
 | Splits | Disjoint ids and groups on a synthetic fixture shaped like the UniqueShip CSVs; the same checks on the real manifest when the data is present; stable for a fixed seed on computed splits |
 | Loader | Parses a miniature fixture bundle; rejects a wrong sample rate |
-| Features | Expected shapes for MFCC and log-mel; cache refuses a mismatched config |
+| Features | Expected shapes for MFCC and log-mel; gain change shifts log-mel by a constant; cache build on a fixture writes array, index and meta; duplicate clip ids fail; unreadable clips are skipped and listed; too many failures stop the build; cache refuses a mismatched config and names the fields |
 | Inference | Loads a tiny fixture model; predicts on a synthetic WAV; scores sum to ~1 |
 | Invalid input | One test per row in the section 6 error table |
 | Reproducibility | Training for a few steps with a fixed seed twice gives the same loss (smoke test) |
@@ -187,8 +192,8 @@ A second dataset needs its own `DatasetLoader`, a coarse label mapping defined i
 
 ## 12. Compute workflow (E5)
 
-1. **Kaggle:** attach the bundle as a Kaggle dataset, join and unzip it into `/tmp` (the temporary disk, about 1 TB), run `cache_features.py`, and save the cache and manifest to `/kaggle/working` as notebook output.
-2. **Local:** download only the cache and the manifest (a few GB). Train, evaluate and run the app locally on the laptop; device auto-selection uses mps.
+1. **Kaggle:** attach the bundle as a Kaggle dataset, join and unzip it into `/tmp` (the temporary disk, about 1 TB), run `cache_features.py` for 32 kHz and 16 kHz, and save the caches and manifest to `/kaggle/working` as notebook output. The output is also saved as a private Kaggle dataset ("New Dataset from output"), so a CNN run on Kaggle can attach it without extracting the audio again (to be verified on the first run; if it fails, the cache is uploaded from the laptop).
+2. **Local:** download only the caches and the manifest (about 3.5 GB) to `data/cache/` (git-ignored). Train, evaluate and run the app locally on the laptop; device auto-selection uses mps.
 3. **Plain path** (README): download the bundle, run `scripts/download_data.py` to verify it, run `cache_features.py` locally. Needs about 44 GB free before the zip is deleted.
 
 Kaggle's `/tmp` is wiped when a session ends, so step 1 is rerun from the zip if needed; `cache_features.py` is idempotent. Unzipped copies of the audio are not kept on Kaggle: the extraction (about 30 minutes) is paid once per run, and runs are batched (cache build and sample export together) to limit repeats.

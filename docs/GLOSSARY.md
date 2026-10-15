@@ -20,6 +20,10 @@
 
 **Model confidence** — the model's softmax score per class, not a calibrated probability.
 
-**Feature cache** — precomputed features for every clip, built once so training does not need the raw audio.
+**Feature cache** — precomputed log-mel features for every clip, one per sample rate, built once so training does not need the raw audio.
+
+**Clip id** — a clip's identity everywhere (manifests, cache, error lists): its path under `audio/` without `.wav`, such as `cargo/<start>_<end>`.
+
+**Stale cache** — a feature cache whose recorded feature settings differ from the current config; training refuses it.
 
 **Cross-source test** — evaluating on a different dataset (for example ShipsEar). Reported separately; out of scope for P0.

@@ -100,7 +100,7 @@ Windows are cut **after** the split is made, so a recording's windows can only f
 - **Baseline:** MFCC summary features into a scikit-learn pipeline (scaler + classifier; SVM or random forest, chosen on validation).
 - **CNN:** a compact stack of 3–4 conv blocks (conv, batch norm, ReLU, pool), global average pooling, linear head. Class-weighted cross-entropy (P1). Model selection on validation macro-F1.
 - **Device:** `train.py` picks cuda, then mps, then cpu, so the same code runs on Kaggle and on the author's Apple-silicon laptop.
-- **Seeds:** one config seed controls Python, NumPy and PyTorch RNGs; deterministic algorithms are enabled where practical. The reproducibility gate uses a ±1–2 point macro-F1 tolerance.
+- **Seeds:** one config seed controls Python, NumPy and PyTorch RNGs; deterministic algorithms are enabled where practical. The reproducibility gate has two tiers (PRD section 3): tests plus a fixture smoke run for anyone, and a cache-based retrain for the author within ±1 point macro-F1 (baseline) or ±2 (CNN).
 - **Feature cache (E5):** `scripts/cache_features.py` runs the same preprocessing and feature code over all clips, once (each clip appears in all five folds, so the cache is not per fold). Training reads the cache, so the 26 GB audio is only needed once. The cache is generated and never committed. One cache per sample rate (`cache/sr32000/`, `cache/sr16000/`, both built in the same run), each holding:
   - `logmel.npy`: one array, clips × 64 × 313, float16, un-normalized dB (about 1.7 GB for about 43,200 clips), read with memory mapping;
   - `index.csv`: clip id → row, class, MMSI, duration, padded flag, peak level and RMS level;
@@ -162,7 +162,7 @@ Single Streamlit page: file uploader, "Classify" button, result card (predicted 
 `evaluate.py` computes, from a run directory and its manifest:
 - accuracy, the 9-class macro-F1 (headline) and the 12-class macro-F1, per-class precision/recall/F1, and the confusion matrix, on the test split. The 9-class subset is a config list (every class with at least 50 distinct training vessels in every fold, plus background: dredger, pilotvessel and rescue are out); its score is F1 averaged over those 9 labels on the full test set from the same 12-class model (scikit-learn `labels=`). The 12-class score averages over the classes with test clips in that fold, and the classes without any are recorded beside it;
 - the number of distinct vessels behind each class in the train and test splits, printed beside each per-class score;
-- per-clip results, and per-vessel results as an additional table;
+- per-clip results; beside each class, per fold, the number of test vessels and the share of test clips from the largest test vessel (background grouped by day). A vessel-vote table (mean softmax over a vessel's clips, P1) is added later;
 - mean and spread across the five folds, for both models;
 - a baseline-vs-CNN comparison table written to `metrics.json` and rendered in the README.
 
@@ -178,13 +178,13 @@ Misclassified clips are listed with their ids and groups so the P1 error analysi
 | Features | Expected shapes for MFCC and log-mel; gain change shifts log-mel by a constant; cache build on a fixture writes array, index and meta; duplicate clip ids fail; unreadable clips are skipped and listed; too many failures stop the build; cache refuses a mismatched config and names the fields |
 | Inference | Loads a tiny fixture model; predicts on a synthetic WAV; scores sum to ~1 |
 | Invalid input | One test per row in the section 6 error table |
-| Reproducibility | Training for a few steps with a fixed seed twice gives the same loss (smoke test) |
+| Reproducibility | Training for a few steps with a fixed seed twice gives the same loss; end-to-end smoke run on the synthetic fixture (train, evaluate, load in the app) |
 
 Tests use synthetic audio, so the suite runs without the dataset.
 
 ## 10. Provisional values to settle after D3
 
-File size and duration limits (A4); silence threshold; which CNN fold ships in the app; whether per-vessel aggregation is meaningful.
+File size and duration limits (A4); silence threshold; which CNN fold ships in the app.
 
 ## 11. Second dataset (P2) seam
 

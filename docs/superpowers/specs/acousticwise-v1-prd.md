@@ -2,7 +2,7 @@
 
 - **Status:** Draft v2 for review (revised 2026-10-09: primary dataset changed from ShipsEar to UniqueShip)
 - **Date:** 2026-10-08
-- **Target release:** 2026-10-31
+- **Target release:** 2026-11-25 (baseline-only fallback decided 2026-11-18; see the build plan)
 - **Source:** `AcousticWise v1.docx` (Definition of Done, plan, stretch objective)
 
 ## 1. Problem, audience, goals, non-goals
@@ -62,7 +62,7 @@ The dataset reviews behind these decisions are kept as local research notes and 
 - **M1.** Baseline: MFCC features plus a classical classifier.
 - **M2.** CNN: log-mel input, PyTorch, compact.
 - **M3.** Use the dataset's five official folds. An automated test asserts, for every fold, zero shared MMSI across train/val/test and zero shared background days, and that no clip appears in two splits. Results are the mean and spread across the five folds.
-- **M4.** Held-out report: accuracy, macro-F1 (12-class and 9-class), per-class precision/recall with the vessel count beside each class, confusion matrix. The unit is the clip; per-vessel aggregation is added only if it makes sense for the data (most vessels have one or two clips).
+- **M4.** Held-out report: accuracy, macro-F1 (12-class and 9-class), per-class precision/recall with the vessel count beside each class, confusion matrix. The unit is the clip. Beside each class the table also shows, per fold, the number of test vessels and the share of test clips from the class's largest test vessel, so the reader sees how much each score rests on a few ships (background is grouped by day).
 - **M5.** Baseline vs CNN comparison, with a written explanation if the CNN does not win.
 - **M6.** Model configuration, random seeds, the fold used and evaluation methodology are saved with each model artifact.
 
@@ -77,17 +77,18 @@ The dataset reviews behind these decisions are kept as local research notes and 
 - **E2.** Dependency instructions, model-loading instructions and a one-command launch.
 - **E3.** Automated tests for preprocessing, the split check, inference and invalid input.
 - **E4.** README with architecture diagram, dataset provenance, measured results, limitations and screenshots.
-- **E5.** Documented data-and-compute path that does not need the 26 GB audio on the author's laptop: features are extracted on Kaggle, and training and the app run locally. The README also gives the plain path (download, unzip, run) with its disk requirement (about 18 GB zipped plus 26 GB unzipped).
+- **E5.** Documented data-and-compute path that does not need the 26 GB audio on the author's laptop: features are extracted on Kaggle, and training and the app run locally. The README also gives the plain path (download, unzip, run) with its disk requirement (about 18 GB zipped plus 26 GB unzipped), and the two-tier reproducibility gate (section 3).
 
 ### P1 — should ship
 - Error analysis: at least five reviewed misclassifications with spectrograms.
 - Model card and a bundled sample recording for the demo.
 - **Sample browser.** A page in the local app where the user picks a class and plays 3 sample clips of it (36 clips in the repo, 3 per class, about 23 MB, drawn from fold 1 test so the clips come from vessels the fold 1 model never trains on; dredger and pilotvessel use other folds where fold 1 has no test vessel). The clips carry CC-BY 4.0 attribution to Ocean Networks Canada.
 - Class-imbalance handling, with the chosen approach documented. Imbalance here is of vessels, not clips, so class weights alone do not fix it; the 9-class headline is the main mitigation.
-- Per-vessel results, so the reader can see how much each score rests on a few ships.
+- Per-vessel results: each test vessel (or background day) gets one prediction from the mean softmax of its clips, scored as a separate table. Cargo vessels have only 1–2 clips each, so the vote changes little for cargo; the other ship classes have 8 to 35 clips per vessel or more.
+- Public feature cache: the Kaggle cache dataset made public with ONC attribution (CC-BY 4.0), so a reviewer can run tier 2 of the reproducibility gate with a 3.5 GB download instead of the 26 GB audio.
 - **Demo (P1-DEMO).** The README embeds a 60–90 second screen recording or GIF of the local app, and the repo includes three demo clips: one correctly classified, one misclassified, one invalid (for example silent or too short). The correct and misclassified clips are chosen from the sample-browser clips once a model exists; the invalid clip is generated. UniqueShip clips may be included with attribution under CC-BY 4.0. The four public ShipsEar sample WAVs have no stated licence and are used only locally, never committed; if shown in the app, they are labelled "out-of-domain, not a validated result".
 
-### P2 — stretch (only after the Week 3 gate)
+### P2 — stretch (only after v1.0)
 - **Cross-source test with full ShipsEar**, if the maintainers grant access. It is reported separately from the same-source test, uses a coarse mapping from UniqueShip classes to ShipsEar's A–E defined in advance (classes with no clean equivalent, such as `other`, `rescue` and `pilotvessel`, are excluded), and states that audio from a different hardware chain (52.7 kHz, 24-bit) is resampled. With only the four public sample WAVs this is a qualitative demo, never a metric.
 - Other candidate sources (DeepShip, Oceanship, QiandaoEar22; all unverified for licence, identifiers and mapping). Wolfset (lab-tank recordings of small motors) does not qualify and is at most an out-of-domain stress test.
 - The UniqueShip **5 Class - Balanced** bundle (213 h, 3,175 vessels, no rare classes) as a second benchmark. It is 64.8 GB zipped, so it is attempted only if it can be downloaded directly in a Kaggle notebook.
@@ -97,13 +98,13 @@ The dataset reviews behind these decisions are kept as local research notes and 
 
 ## 3. Success metrics
 
-### Release gates (pass/fail by 2026-10-31)
+### Release gates (pass/fail at release)
 
 | Metric | Pass condition |
 |---|---|
 | DoD completeness | All P0 items (D1–E5) checked, each linked to evidence |
 | Leakage | Automated test shows zero shared MMSI, zero shared background days and zero shared clips across train/val/test in every one of the five folds |
-| Reproducibility | A fresh clone with the data present reproduces reported test metrics from the saved config and seed within ±1–2 points macro-F1 |
+| Reproducibility | Tier 1 (anyone, no data): a fresh clone passes `uv run pytest` and an end-to-end smoke run on the synthetic fixture (train a few steps, evaluate, load the model in the app). Tier 2 (author, clean clone plus the downloaded feature cache): retraining from the saved config and seed reproduces the reported test metrics within ±1 point macro-F1 for the baseline and ±2 for the CNN |
 | Launch | A person other than the author (or a clean environment following the README) runs the app with one command |
 | Robustness | Silent, too-short, non-WAV and corrupt files each yield a friendly error, covered by tests |
 | Inference | The saved model predicts on a previously unseen recording |
@@ -129,14 +130,9 @@ The dataset reviews behind these decisions are kept as local research notes and 
 
 ### Timeline
 
-| Week | Dates (2026) | Deliverable | Gate |
-|---|---|---|---|
-| 1 | Oct 8–14 | Data pipeline over the official folds, cached features, baseline | Dataset decision recorded in `DATA.md` by **Oct 14**. Done so far: ShipsEar permission email sent Oct 9; UniqueShip inspected Oct 9 (sample rate, 12 classes, zero-leakage checks pass); leakage test in code passes |
-| 2 | Oct 15–21 | Log-mel CNN, comparison, saved model and config | Baseline vs CNN macro-F1 recorded |
-| 3 | Oct 22–28 | Inference module, UI, validation, tests | A second person or clean environment runs the app |
-| 4 | Oct 29–31 | Bug fixes, README, diagram, demo, v1.0 tag | All release gates pass |
+The week-by-week schedule, slice estimates and cut line are in `../plans/acousticwise-v1-p0-build-plan.md` (2026-10-15; replaces the original 2026-10-31 timeline). In short: first real baseline results in the week of Nov 5–11, a baseline-only v1.0 candidate by Nov 18, and v1.0 with the CNN on **2026-11-25** at about 10 hours a week.
 
-**Scope cut-off:** P1 and P2 work starts only after the Week 3 gate. If Week 2 slips, cut P1 items before touching any P0 item.
+**Scope cut-off:** P1 and P2 work starts only after v1.0. If the schedule slips, the CNN is cut (shipped as v1.1) before any other P0 item.
 
 ### Risks
 
@@ -148,12 +144,10 @@ The dataset reviews behind these decisions are kept as local research notes and 
 | The full dataset and even this bundle are large (17.8 GB zipped, 26 GB unzipped), hosted on Google Drive in 10 GB parts | Hard to reproduce; link rot or quota; Kaggle `/tmp` is wiped between sessions | Cache features; record checksums in `DATA.md`; document the Kaggle path and the plain path |
 | ShipsEar access depends on one maintainer (P2 only) | P2 may not happen | Not on the critical path; P2 is optional |
 | CNN underperforms baseline | Weak story | Acceptable; explain using class overlap and label noise |
-| Week 3 UI work slips | Late release | Use Streamlit; no custom frontend |
+| UI work slips (week 5) | Late release | Use Streamlit; no custom frontend |
 
 ### Open questions (do not block the PRD)
 1. Final A4 file limits (depends on D3).
-2. Final audio sample rate and window settings (depends on a spectrum check; see the technical design).
-3. License for the project's own code (for example MIT).
-4. Whether to also report a per-vessel aggregation, given that most vessels have one or two clips.
-5. Whether the ShipsEar maintainers will answer, and whether they permit sharing sample clips.
-6. Whether the 5 Class - Balanced bundle can be downloaded directly into Kaggle.
+2. License for the project's own code (for example MIT).
+3. Whether the ShipsEar maintainers will answer, and whether they permit sharing sample clips.
+4. Whether the 5 Class - Balanced bundle can be downloaded directly into Kaggle.

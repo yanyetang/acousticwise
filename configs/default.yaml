@@ -1,0 +1,42 @@
+# AcousticWise default config. Values follow the technical design
+# (docs/superpowers/specs/acousticwise-v1-technical-design.md).
+# "provisional" values are set from the dataset report (S7).
+
+seed: 42
+
+data:
+  bundle_dir: data/uniqueship        # unzipped UniqueShip bundle (only needed to build the cache)
+  cache_dir: data/cache              # downloaded feature caches: sr32000/, sr16000/
+  splits_path: artifacts/splits.json
+  app_fold: 1                        # the fold whose model ships in the app
+
+audio:
+  sample_rate: 32000                 # native rate; Nyquist 16 kHz (ticket 03)
+  window_seconds: 5.0
+  hop_seconds: 2.5                   # for uploads longer than one window
+  min_seconds: 4.0                   # shorter clips raise AudioTooShortError; 4.0 s and up are zero-padded
+  normalization: none                # peak | rms | none, chosen on validation data, applied on load
+
+features:
+  n_fft: 2048
+  hop_length: 512
+  n_mels: 64                         # 64 x 313 frames per 5 s window
+  n_mfcc: 20                         # MFCC derived from the log-mel; mean/std summary = 40 values
+  cache_format: 1                    # bump by hand when feature code changes
+
+validation:                          # provisional (S7)
+  max_file_mb: 50
+  max_seconds: 600
+  silence_rms: 1.0e-4
+
+evaluation:
+  nine_class_subset:                 # background plus classes with >= 50 training vessels in every fold
+    - background
+    - cargo
+    - fishing
+    - other
+    - passengership
+    - pleasurecraft
+    - sailing
+    - tanker
+    - tug

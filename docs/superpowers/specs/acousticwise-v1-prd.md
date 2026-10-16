@@ -130,7 +130,7 @@ The dataset reviews behind these decisions are kept as local research notes and 
 
 ### Timeline
 
-The week-by-week schedule, slice estimates and cut line are in `../plans/acousticwise-v1-p0-build-plan.md` (2026-10-15; replaces the original 2026-10-31 timeline). In short: first real baseline results in the week of Nov 5–11, a baseline-only v1.0 candidate by Nov 18, and v1.0 with the CNN on **2026-11-25** at about 10 hours a week.
+The schedule is tracked on GitHub as six weekly Sprint milestones, with one issue per build slice (set 2026-10-15; replaces the original 2026-10-31 timeline). In short: first real baseline results in the week of Nov 5–11, a baseline-only v1.0 candidate by Nov 18, and v1.0 with the CNN on **2026-11-25** at about 10 hours a week.
 
 **Scope cut-off:** P1 and P2 work starts only after v1.0. If the schedule slips, the CNN is cut (shipped as v1.1) before any other P0 item.
 

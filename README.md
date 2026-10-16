@@ -2,7 +2,7 @@
 
 Vessel-type classification from passive underwater sound, on the open [UniqueShip](https://uniqueshipdata.org/) dataset (Ocean Networks Canada hydrophones, 12 classes). An MFCC baseline is compared with a log-mel CNN under vessel-disjoint splits, and the result is served in a local Streamlit app.
 
-Status: planning done, build starting, with no code or results yet. The v1.0 target is 2026-11-25 ([build plan](docs/superpowers/plans/acousticwise-v1-p0-build-plan.md)).
+Status: planning done, build starting, with no code or results yet. The v1.0 target is 2026-11-25 (schedule: [Sprint milestones](https://github.com/yanyetang/acousticwise/milestones)).
 
 ## Documents
 

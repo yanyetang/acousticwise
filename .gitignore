@@ -18,5 +18,6 @@ __pycache__/
 .ruff_cache/
 
 
-# Raw research notes, kept local
+# Raw research notes and the working build plan, kept local
 docs/research_notes/
+docs/superpowers/plans/

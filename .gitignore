@@ -2,7 +2,7 @@
 .DS_Store
 
 # Data: never commit audio (see DATA.md)
-data/
+/data/
 *.wav
 *.flac
 

@@ -1,0 +1,15 @@
+{
+  "id": "yanyetang/acousticwise-spike-cnn-vs-crnn",
+  "title": "AcousticWise spike CNN vs CRNN",
+  "code_file": "spike_cnn_crnn_lstm.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": ["yanyetang/uniqueship-12-class-5-hours"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

@@ -2,7 +2,7 @@
 
 - **Status:** Draft v2 for review (revised 2026-10-09: primary dataset changed from ShipsEar to UniqueShip)
 - **Date:** 2026-10-08
-- **Target release:** 2026-11-25 (baseline-only fallback decided 2026-11-18; see the build plan)
+- **Target release:** 2026-12-02 (baseline-only fallback decided 2026-11-25; see the build plan)
 - **Source:** `AcousticWise v1.docx` (Definition of Done, plan, stretch objective)
 
 ## 1. Problem, audience, goals, non-goals
@@ -60,10 +60,10 @@ The dataset reviews behind these decisions are kept as local research notes and 
 
 **Modeling and evaluation**
 - **M1.** Baseline: MFCC features plus a classical classifier.
-- **M2.** CNN: log-mel input, PyTorch, compact.
+- **M2.** CNN: log-mel input, PyTorch, compact. A CRNN variant (the same convolution layers, with an LSTM reading the time frames in order instead of time pooling) is trained and reported alongside it.
 - **M3.** Use the dataset's five official folds. An automated test asserts, for every fold, zero shared MMSI across train/val/test and zero shared background days, and that no clip appears in two splits. Results are the mean and spread across the five folds.
 - **M4.** Held-out report: accuracy, macro-F1 (12-class and 9-class), per-class precision/recall with the vessel count beside each class, confusion matrix. The unit is the clip. Beside each class the table also shows, per fold, the number of test vessels and the share of test clips from the class's largest test vessel, so the reader sees how much each score rests on a few ships (background is grouped by day).
-- **M5.** Baseline vs CNN comparison, with a written explanation if the CNN does not win.
+- **M5.** Baseline vs CNN vs CRNN comparison, with a written explanation when a model does not win. A CRNN gain over the CNN counts only if it is larger than the spread between folds.
 - **M6.** Model configuration, random seeds, the fold used and evaluation methodology are saved with each model artifact.
 
 **Application**
@@ -130,9 +130,9 @@ The dataset reviews behind these decisions are kept as local research notes and 
 
 ### Timeline
 
-The schedule is tracked in the GitHub project board, with one issue per build slice and six weekly sprints (the board's Sprint field) (set 2026-10-15; replaces the original 2026-10-31 timeline). In short: first real baseline results in the week of Nov 5–11, a baseline-only v1.0 candidate by Nov 18, and v1.0 with the CNN on **2026-11-25** at about 10 hours a week.
+The schedule is tracked in the GitHub project board, with one issue per build slice and seven weekly sprints (the board's Sprint field) (set 2026-10-15, revised 2026-10-16; replaces the original 2026-10-31 timeline). On 2026-10-16 a one-week spike was added: a fold 1 preview of CNN vs CRNN for the 2026-10-22 review, which moved the rest of the schedule back one week. In short: first real baseline results in the week of Nov 12–18, a baseline-only v1.0 candidate by Nov 25, and v1.0 with the CNN and CRNN on **2026-12-02** at about 10 hours a week.
 
-**Scope cut-off:** P1 and P2 work starts only after v1.0. If the schedule slips, the CNN is cut (shipped as v1.1) before any other P0 item.
+**Scope cut-off:** P1 and P2 work starts only after v1.0. If the schedule slips, the CRNN is cut first, then the CNN (shipped as v1.1), before any other P0 item.
 
 ### Risks
 

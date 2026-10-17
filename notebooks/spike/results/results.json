@@ -1,0 +1,99 @@
+{
+  "settings": {
+    "train_per_class": 600,
+    "val_per_class": 150,
+    "epochs": 25,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "classes": [
+      "background",
+      "cargo",
+      "dredger",
+      "fishing",
+      "other",
+      "passengership",
+      "pilotvessel",
+      "pleasurecraft",
+      "rescue",
+      "sailing",
+      "tanker",
+      "tug"
+    ]
+  },
+  "clips": {
+    "train": 7200,
+    "validation": 1650,
+    "test": 4477
+  },
+  "summary": {
+    "CNN": {
+      "test_f1_12": [
+        0.258,
+        0.006
+      ],
+      "test_f1_9": [
+        0.303,
+        0.006
+      ],
+      "test_accuracy": [
+        0.293,
+        0.005
+      ],
+      "val_f1_12": [
+        0.321,
+        0.008
+      ],
+      "train_seconds": [
+        184.627,
+        1.92
+      ]
+    },
+    "CRNN": {
+      "test_f1_12": [
+        0.265,
+        0.002
+      ],
+      "test_f1_9": [
+        0.314,
+        0.005
+      ],
+      "test_accuracy": [
+        0.298,
+        0.001
+      ],
+      "val_f1_12": [
+        0.311,
+        0.011
+      ],
+      "train_seconds": [
+        188.527,
+        0.111
+      ]
+    },
+    "LSTM": {
+      "test_f1_12": [
+        0.221,
+        0.021
+      ],
+      "test_f1_9": [
+        0.263,
+        0.021
+      ],
+      "test_accuracy": [
+        0.249,
+        0.022
+      ],
+      "val_f1_12": [
+        0.271,
+        0.002
+      ],
+      "train_seconds": [
+        60.965,
+        0.103
+      ]
+    }
+  }
+}

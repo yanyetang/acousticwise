@@ -28,7 +28,7 @@ acousticwise/
       features.py          # MFCC (M1), log-mel (M2)
     models/
       baseline.py          # MFCC + classical classifier
-      cnn.py               # compact CNN
+      cnn.py               # compact CNN; CRNN variant via a time-pooling setting
     train.py               # CLI: train baseline or CNN, device auto-select
     evaluate.py            # metrics, confusion matrix, 12- and 9-class (M4)
     inference.py           # Predictor: the only API the app uses
@@ -98,7 +98,7 @@ Windows are cut **after** the split is made, so a recording's windows can only f
 ## 5. Models, features and artifacts (M1, M2, M6)
 
 - **Baseline:** MFCC summary features into a scikit-learn pipeline (scaler + classifier; SVM or random forest, chosen on validation).
-- **CNN:** a compact stack of 3–4 conv blocks (conv, batch norm, ReLU, pool), global average pooling, linear head. Class-weighted cross-entropy (P1). Model selection on validation macro-F1.
+- **CNN:** a compact stack of 3–4 conv blocks (conv, batch norm, ReLU, pool), then a time-combining step chosen in config: average pooling over time (CNN) or a bidirectional LSTM over the time frames (CRNN), then a linear head. Class-weighted cross-entropy (P1). Model selection on validation macro-F1.
 - **Device:** `train.py` picks cuda, then mps, then cpu, so the same code runs on Kaggle and on the author's Apple-silicon laptop.
 - **Seeds:** one config seed controls Python, NumPy and PyTorch RNGs; deterministic algorithms are enabled where practical. The reproducibility gate has two tiers (PRD section 3): tests plus a fixture smoke run for anyone, and a cache-based retrain for the author within ±1 point macro-F1 (baseline) or ±2 (CNN).
 - **Feature cache (E5):** `scripts/cache_features.py` runs the same preprocessing and feature code over all clips, once (each clip appears in all five folds, so the cache is not per fold). Training reads the cache, so the 26 GB audio is only needed once. The cache is generated and never committed. One cache per sample rate (`cache/sr32000/`, `cache/sr16000/`, both built in the same run), each holding:
@@ -164,7 +164,7 @@ Single Streamlit page: file uploader, "Classify" button, result card (predicted 
 - the number of distinct vessels behind each class in the train and test splits, printed beside each per-class score;
 - per-clip results; beside each class, per fold, the number of test vessels and the share of test clips from the largest test vessel (background grouped by day). A vessel-vote table (mean softmax over a vessel's clips, P1) is added later;
 - mean and spread across the five folds, for both models;
-- a baseline-vs-CNN comparison table written to `metrics.json` and rendered in the README.
+- a baseline vs CNN vs CRNN comparison table written to `metrics.json` and rendered in the README.
 
 Misclassified clips are listed with their ids and groups so the P1 error analysis can pull spectrograms.
 

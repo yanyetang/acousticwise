@@ -5,10 +5,15 @@ import numpy as np
 import soundfile as sf
 from scipy.signal import resample_poly
 
+from acousticwise.errors import UnsupportedFileError
+
 
 def load_audio(path: Path, target_sr: int) -> np.ndarray:
     """Read a WAV as mono float32 samples at target_sr."""
-    samples, sample_rate = sf.read(path, dtype="float32")
+    try:
+        samples, sample_rate = sf.read(path, dtype="float32")
+    except sf.LibsndfileError as err:
+        raise UnsupportedFileError(f"File {path} is not a supported audio file.") from err
     mono_samples = samples
     if samples.ndim == 2:
         mono_samples = np.mean(samples, axis=1).astype("float32")

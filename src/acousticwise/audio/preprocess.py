@@ -1,6 +1,6 @@
 import numpy as np
 
-from acousticwise.errors import AudioTooShortError
+from acousticwise.errors import AudioTooShortError, SilentAudioError
 
 
 def make_windows(
@@ -20,3 +20,10 @@ def make_windows(
     hop_length = int(round(hop_seconds * sr))
     starts = range(0, len(samples) - window_length + 1, hop_length)
     return np.stack([samples[s : s + window_length] for s in starts])
+
+
+def check_not_silent(samples: np.ndarray, silence_rms: float) -> None:
+    """Raise SilentAudioError when the RMS of samples is below silence_rms."""
+    rms = np.sqrt(np.mean(samples**2))
+    if rms < silence_rms:
+        raise SilentAudioError(f"Audio is silent: RMS {rms:.6f} < {silence_rms:.6f}")

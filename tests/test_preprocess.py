@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from acousticwise.audio.preprocess import make_windows
-from acousticwise.errors import AudioTooShortError
+from acousticwise.audio.preprocess import check_not_silent, make_windows
+from acousticwise.errors import AudioTooShortError, SilentAudioError
 from tests.conftest import tone
 
 
@@ -35,3 +35,11 @@ def test_long_clip_is_cut_into_overlapping_windows():
     np.testing.assert_array_equal(windows[0], samples[0:160000])
     np.testing.assert_array_equal(windows[1], samples[80000:240000])
     np.testing.assert_array_equal(windows[2], samples[160000:320000])
+
+
+def test_silent_clip_raises_silent_audio():
+    # Near-silent: RMS (loudness) 1e-5 is below the 1e-4 threshold from the config.
+    samples = np.full(160000, 1e-5, dtype=np.float32)
+
+    with pytest.raises(SilentAudioError):
+        check_not_silent(samples, silence_rms=1.0e-4)

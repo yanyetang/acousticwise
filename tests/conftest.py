@@ -40,3 +40,25 @@ def make_bundle(tmp_path):
         return root
 
     return _make
+
+
+def tone(seconds, sr, freq=440.0, amplitude=0.5, channels=1):
+    """A sine tone as float32 samples; shape (n,) for mono, (n, channels) otherwise."""
+    import numpy as np
+
+    t = np.arange(int(round(seconds * sr))) / sr
+    x = (amplitude * np.sin(2 * np.pi * freq * t)).astype("float32")
+    return x if channels == 1 else np.stack([x] * channels, axis=1)
+
+
+@pytest.fixture
+def write_wav(tmp_path):
+    """Write samples to a WAV (32-bit PCM, like UniqueShip) and return its path."""
+    import soundfile as sf
+
+    def _write(samples, sr, name="clip.wav", subtype="PCM_32"):
+        path = tmp_path / name
+        sf.write(path, samples, sr, subtype=subtype)
+        return path
+
+    return _write

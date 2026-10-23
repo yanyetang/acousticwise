@@ -8,3 +8,11 @@ def log_mel(samples: np.ndarray, sr: int, n_mels: int, n_fft: int, hop_length: i
         y=samples, sr=sr, n_mels=n_mels, n_fft=n_fft, hop_length=hop_length
     )
     return librosa.power_to_db(mel, ref=1.0, top_db=None)
+
+
+def mfcc_summary(log_mel_db: np.ndarray, n_mfcc: int) -> np.ndarray:
+    """MFCC from a log-mel, summarised over time: n_mfcc means then n_mfcc stds."""
+    mfcc = librosa.feature.mfcc(S=log_mel_db, n_mfcc=n_mfcc)
+    means = np.mean(mfcc, axis=1)
+    stds = np.std(mfcc, axis=1)
+    return np.concatenate([means, stds])

@@ -6,6 +6,6 @@ Status: planning done, build starting, with no code or results yet. The v1.0 tar
 
 ## Documents
 
-- Requirements: [`docs/superpowers/specs/acousticwise-v1-prd.md`](docs/superpowers/specs/acousticwise-v1-prd.md)
-- Technical design: [`docs/superpowers/specs/acousticwise-v1-technical-design.md`](docs/superpowers/specs/acousticwise-v1-technical-design.md)
+- Requirements: [`docs/prd.md`](docs/prd.md)
+- Technical design: [`docs/technical-design.md`](docs/technical-design.md)
 - Data provenance, licence and checksums: [`DATA.md`](DATA.md)

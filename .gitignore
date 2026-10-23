@@ -17,6 +17,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Raw research notes and local working plans
+# Raw research notes, reports built from them, and local working plans
 docs/research_notes/
+docs/reports/
 docs/superpowers/

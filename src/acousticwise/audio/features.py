@@ -16,3 +16,15 @@ def mfcc_summary(log_mel_db: np.ndarray, n_mfcc: int) -> np.ndarray:
     means = np.mean(mfcc, axis=1)
     stds = np.std(mfcc, axis=1)
     return np.concatenate([means, stds])
+
+
+def normalization_offset_db(samples: np.ndarray, method: str) -> float:
+    """dB to add to a log-mel so it matches the normalized audio (peak | rms | none)."""
+    if method == "peak":
+        return float(-20 * np.log10(np.max(np.abs(samples))))
+    elif method == "rms":
+        return float(-20 * np.log10(np.sqrt(np.mean(samples**2))))
+    elif method == "none":
+        return 0.0
+    else:
+        raise ValueError(f"Unknown normalization method: {method}")

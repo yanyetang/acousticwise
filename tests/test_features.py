@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from acousticwise.audio.features import log_mel, mfcc_summary
+from acousticwise.audio.features import log_mel, mfcc_summary, normalization_offset_db
 from tests.conftest import tone
 
 
@@ -40,3 +40,19 @@ def test_mfcc_summary_has_20_means_then_20_stds():
     assert summary.shape == (40,)
     assert np.any(summary[:20] != 0.0)
     np.testing.assert_allclose(summary[20:], 0.0, atol=1e-6)
+
+
+@pytest.mark.parametrize(
+    ("method", "expected_db"),
+    [
+        ("peak", 20 * np.log10(2)),  # peak 0.5 is raised to 1.0: x2 = +6.02 dB
+        ("rms", 20 * np.log10(2 * np.sqrt(2))),  # RMS 0.354 is raised to 1.0: +9.03 dB
+        ("none", 0.0),
+    ],
+)
+def test_normalization_offsets_for_a_tone_of_amplitude_half(method, expected_db):
+    samples = tone(5.0, 32000, amplitude=0.5)
+
+    offset = normalization_offset_db(samples, method)
+
+    assert offset == pytest.approx(expected_db, abs=1e-3)

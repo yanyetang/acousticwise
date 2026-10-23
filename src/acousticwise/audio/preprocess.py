@@ -1,5 +1,8 @@
+from pathlib import Path
+
 import numpy as np
 
+from acousticwise.audio.io import load_audio
 from acousticwise.errors import AudioTooShortError, SilentAudioError
 
 
@@ -27,3 +30,18 @@ def check_not_silent(samples: np.ndarray, silence_rms: float) -> None:
     rms = np.sqrt(np.mean(samples**2))
     if rms < silence_rms:
         raise SilentAudioError(f"Audio is silent: RMS {rms:.6f} < {silence_rms:.6f}")
+
+
+def preprocess_file(
+    path: Path,
+    sample_rate: int,
+    window_seconds: float,
+    hop_seconds: float,
+    min_seconds: float,
+    silence_rms: float,
+) -> np.ndarray:
+    """Load a WAV and cut it into windows; the one path for training, caching and the app."""
+    samples = load_audio(path, sample_rate)
+    check_not_silent(samples, silence_rms)
+    windows = make_windows(samples, sample_rate, window_seconds, hop_seconds, min_seconds)
+    return windows

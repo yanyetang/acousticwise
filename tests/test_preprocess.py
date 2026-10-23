@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from acousticwise.audio.preprocess import check_not_silent, make_windows
+from acousticwise.audio.preprocess import check_not_silent, make_windows, preprocess_file
 from acousticwise.errors import AudioTooShortError, SilentAudioError
 from tests.conftest import tone
 
@@ -43,3 +43,21 @@ def test_silent_clip_raises_silent_audio():
 
     with pytest.raises(SilentAudioError):
         check_not_silent(samples, silence_rms=1.0e-4)
+
+
+def test_preprocess_file_loads_checks_and_windows_a_wav(write_wav):
+    # One call does the whole path: 12 s stereo at 48 kHz becomes three 5 s mono
+    # windows at 32 kHz, the same shape as in the 12 s windowing test above.
+    path = write_wav(tone(12.0, 48000, channels=2), 48000)
+
+    windows = preprocess_file(
+        path,
+        sample_rate=32000,
+        window_seconds=5.0,
+        hop_seconds=2.5,
+        min_seconds=4.0,
+        silence_rms=1.0e-4,
+    )
+
+    assert windows.dtype == np.float32
+    assert windows.shape == (3, 160000)

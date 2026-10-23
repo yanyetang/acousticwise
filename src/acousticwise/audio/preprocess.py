@@ -12,6 +12,11 @@ def make_windows(
         raise AudioTooShortError(
             f"Audio is too short: {len(samples) / sr:.2f}s < {min_seconds:.2f}s"
         )
+
     window_length = int(round(window_seconds * sr))
-    padded = np.pad(samples, (0, max(0, window_length - len(samples))))
-    return padded[np.newaxis, :]
+    if len(samples) < window_length:
+        padded = np.pad(samples, (0, window_length - len(samples)))
+        return padded[np.newaxis, :]
+    hop_length = int(round(hop_seconds * sr))
+    starts = range(0, len(samples) - window_length + 1, hop_length)
+    return np.stack([samples[s : s + window_length] for s in starts])

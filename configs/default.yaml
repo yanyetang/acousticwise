@@ -1,5 +1,5 @@
 # AcousticWise default config. Values follow the technical design
-# (docs/superpowers/specs/acousticwise-v1-technical-design.md).
+# (docs/technical-design.md).
 # "provisional" values are set from the dataset report (S7).
 
 seed: 42

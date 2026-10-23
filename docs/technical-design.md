@@ -2,7 +2,7 @@
 
 - **Status:** Draft v2 for review (revised 2026-10-09 for UniqueShip as the primary dataset)
 - **Date:** 2026-10-09
-- **Implements:** `acousticwise-v1-prd.md` (requirement IDs below refer to it)
+- **Implements:** [`prd.md`](prd.md) (requirement IDs below refer to it)
 - **Scope:** structure, interfaces and data flow. Values marked *provisional* are fixed after the D3 dataset report.
 
 ## 1. Stack and layout

@@ -17,9 +17,6 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Local Claude Code instructions (personal, not shared)
-CLAUDE.local.md
-
-# Raw research notes and the working build plan, kept local
+# Raw research notes and local working plans
 docs/research_notes/
-docs/superpowers/plans/
+docs/superpowers/

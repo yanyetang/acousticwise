@@ -29,7 +29,7 @@ def check_not_silent(samples: np.ndarray, silence_rms: float) -> None:
     """Raise SilentAudioError when the RMS of samples is below silence_rms."""
     rms = np.sqrt(np.mean(samples**2))
     if rms < silence_rms:
-        raise SilentAudioError(f"Audio is silent: RMS {rms:.6f} < {silence_rms:.6f}")
+        raise SilentAudioError(f"Audio is silent: RMS {rms:.2e} < {silence_rms:.2e}")
 
 
 def preprocess_file(
@@ -43,5 +43,4 @@ def preprocess_file(
     """Load a WAV and cut it into windows; the one path for training, caching and the app."""
     samples = load_audio(path, sample_rate)
     check_not_silent(samples, silence_rms)
-    windows = make_windows(samples, sample_rate, window_seconds, hop_seconds, min_seconds)
-    return windows
+    return make_windows(samples, sample_rate, window_seconds, hop_seconds, min_seconds)

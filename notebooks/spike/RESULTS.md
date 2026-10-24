@@ -116,6 +116,46 @@ What it shows:
 
 **Not directly comparable to the paper.** The paper trains 5-class models, on its 5-class balanced bundle (213 h), with ImageNet-pretrained backbones, over 5 folds. These are 12-class models trained from scratch on 600 clips per class, rescored on fold 1 only. The open questions are how much more data helps (full-data spike) and how much pretraining helps (pretrained MobileNetV3 spike).
 
+## Full data (rerun, 2026-10-24)
+
+Does more data help? Notebook `notebooks/spike_full/spike_full_data.ipynb` is a copy of the spike that uses **all fold 1 training and validation clips**, with a class-weighted loss. Everything else is the same: models, epochs, seeds, features and the fold 1 test split. Raw outputs are in `notebooks/spike_full/results/`.
+
+| | Capped (rescore rerun) | Full data |
+|---|---|---|
+| Training clips | 7,200 (600 per class) | 34,286 (4.8×) |
+| Validation clips | 1,650 | 4,445 |
+| Train time per seed (CNN) | about 3 min | about 13 min |
+
+**The class weights turned out to be close to 1** (0.8 to 1.5; pilotvessel 0.8, dredger 1.5, all others 0.97 to 1.0). The bundle has about 5 hours of clips per class, so the full training split is already nearly balanced in clips; it is the number of **vessels** per class that is unbalanced. In practice this run changes the amount of data, not the loss.
+
+Mean ± std over 3 seeds, fold 1 test:
+
+| Model | 12-class F1, capped → full | 9-class F1, capped → full | 5-class accuracy, capped → full |
+|---|---|---|---|
+| CNN | 0.261 → **0.271** (+0.010) | 0.308 → **0.325** (+0.017) | 0.539 → **0.572** (+0.033) |
+| CRNN | 0.264 → 0.260 (−0.004) | 0.315 → 0.315 (0.000) | 0.552 → 0.543 (−0.009) |
+| LSTM | 0.221 → 0.241 (+0.020) | 0.263 → 0.289 (+0.026) | 0.482 → 0.489 (+0.007) |
+
+Full-data spreads are small (CNN 12-class ± 0.007, 5-class accuracy ± 0.018). Full-data 5-class balanced accuracy: CNN 0.591 ± 0.017, CRNN 0.557 ± 0.010, LSTM 0.503 ± 0.016.
+
+**5-class recall, CNN on full data, 3 seeds pooled** (rows: true class):
+
+| true \ predicted | background | cargo | passengership | tanker | tug |
+|---|---|---|---|---|---|
+| background | **0.93** | 0.00 | 0.05 | 0.00 | 0.02 |
+| cargo | 0.00 | **0.58** | 0.09 | 0.26 | 0.07 |
+| passengership | 0.13 | 0.05 | **0.49** | 0.05 | 0.28 |
+| tanker | 0.00 | 0.45 | 0.07 | **0.40** | 0.08 |
+| tug | 0.06 | 0.08 | 0.25 | 0.04 | **0.57** |
+
+What it shows:
+
+1. **4.8× more data gives only small gains.** The CNN gains about 1 point of 12-class F1 and 3 points of 5-class accuracy; the CRNN gains nothing. Data quantity is not the main limit. The 12-class gain is about the size of the run-to-run noise between separate Kaggle runs (about 0.01, see the MobileNetV3 section), so only the 5-class gain is clearly above noise.
+2. **The limit is likely vessel variety, not clip count.** The extra clips mostly come from the same vessels: cargo already had about one clip per ship, while classes like passengership (88 training vessels) or pilotvessel (1) gain more clips of ships the model has already heard.
+3. **The CNN now leads the CRNN.** The CRNN's small capped-data lead (about one seed spread) has reversed. Together with the spike, there is no evidence yet that reading the time order helps.
+4. **The same confusions remain:** cargo vs tanker, and passengership vs tug.
+5. **5-class accuracy is about 0.57 (balanced 0.59),** against the paper's 0.617 for MobileNetV3-Small and 0.665 for Swin. Pretraining (the MobileNetV3 spike) is the remaining big difference to test.
+
 ## Pretrained MobileNetV3-Small (rerun, 2026-10-24)
 
 Does ImageNet pretraining help? Notebook `notebooks/spike_pretrained/spike_mobilenetv3.ipynb` trains, in one run, our from-scratch **CNN** and an **ImageNet-pretrained MobileNetV3-Small** (torchvision `IMAGENET1K_V1`), the only CNN in the dataset paper. Same capped data as the spike (600 clips per class), same features, 25 epochs, 3 seeds. MobileNetV3 gets the log-mel repeated to 3 channels and resized to 224 × 224, its last layer replaced with 12 outputs, all layers fine-tuned at learning rate 1e-4 (the CNN keeps 1e-3). Raw outputs are in `notebooks/spike_pretrained/results/`.

@@ -81,3 +81,12 @@ def test_train_baseline_with_the_same_seed_gives_the_same_model(
     # Probabilities on a spread of inputs, not just the predicted class, so small differences show.
     x = np.random.default_rng(1).normal(0, 50, size=(20, 40))
     np.testing.assert_array_equal(a.predict_proba(x), b.predict_proba(x))
+
+
+def test_train_baseline_refuses_a_cache_built_with_other_settings(baseline_inputs, tmp_path):
+    cfg, _ = baseline_inputs
+    cfg["features"]["n_mels"] = 32  # the fixture cache was built with 64
+
+    with pytest.raises(ValueError, match="n_mels: cache 64, config 32"):
+        train_baseline(cfg, fold=1, run_dir=tmp_path / "run")
+    assert not (tmp_path / "run").exists()  # nothing half-written

@@ -67,3 +67,27 @@ def test_duplicate_clip_ids_fail_the_build_before_writing(write_wav, tmp_path):
         build_cache(recordings, out, SETTINGS)
 
     assert not (out / "logmel.npy").exists()
+
+
+def test_unreadable_clip_is_skipped_and_listed_in_meta(write_wav, tmp_path):
+    broken = tmp_path / "cargo_b.wav"
+    broken.write_bytes(b"not a wav file")
+    recordings = [
+        make_recording(write_wav, "cargo", "a", tone(5.0, 32000)),
+        Recording(id="cargo/b", path=broken, label="cargo", group="mmsi:1"),
+        make_recording(write_wav, "tug", "c", tone(5.0, 32000, freq=1000.0)),
+    ]
+    out = tmp_path / "cache"
+
+    # 1 failure in 3 clips is far above the real limit (test 4), so raise it here.
+    build_cache(recordings, out, SETTINGS, max_failed_fraction=0.5)
+
+    assert np.load(out / "logmel.npy", mmap_mode="r").shape[0] == 2
+    with open(out / "index.csv") as f:
+        index = list(csv.DictReader(f))
+    assert [(r["clip_id"], r["row"]) for r in index] == [("cargo/a", "0"), ("tug/c", "1")]
+
+    meta = json.loads((out / "meta.json").read_text())
+    [failed] = meta["failed"]
+    assert failed["clip_id"] == "cargo/b"
+    assert failed["reason"]

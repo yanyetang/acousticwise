@@ -71,6 +71,51 @@ Random guessing over the 11 test classes would score about 0.09.
 5. **Some classes cannot be judged on this fold.** Pilotvessel has 1 test vessel (36 clips) and rescue has 3, so their F1 mostly reflects those few vessels.
 6. **Validation scores (about 0.32) are higher than test (about 0.26).** New vessels in the test split are harder than the validation vessels. This is expected with vessel-disjoint splits.
 
+## 5-class rescore (rerun, 2026-10-23)
+
+The dataset paper reports 66.5% accuracy on 5 classes: background, cargo, passengership, tanker, tug. To put a comparable number beside it, the notebook was rerun on Kaggle with **the same training** and one addition: every test clip's 12 class scores (logits) are saved. Section 9 of the notebook then **rescores** the same models on the paper's 5 classes:
+
+1. keep only the test clips whose true class is one of the 5 (2,250 of 4,477 clips);
+2. from each clip's 12 scores, keep the 5 and predict the highest of those.
+
+No model is retrained on 5 classes. Raw outputs are in `results/rescore/`, including `test_logits.npz`, so other class subsets can be rescored without retraining.
+
+**The rerun reproduces the 12-class results** within the seed spread (GPU training is not bit-for-bit repeatable):
+
+| Model | 12-class F1, Oct 16 | 12-class F1, rerun |
+|---|---|---|
+| CNN | 0.258 ± 0.006 | 0.261 ± 0.012 |
+| CRNN | 0.265 ± 0.002 | 0.264 ± 0.002 |
+| LSTM | 0.221 ± 0.021 | 0.221 ± 0.021 |
+
+**5-class results**, mean ± std over 3 seeds, fold 1 test:
+
+| Model | Accuracy | Balanced accuracy | Macro-F1 |
+|---|---|---|---|
+| CNN | 0.539 ± 0.015 | 0.559 ± 0.012 | 0.541 ± 0.024 |
+| **CRNN** | **0.552 ± 0.018** | **0.568 ± 0.020** | **0.555 ± 0.019** |
+| LSTM | 0.482 ± 0.017 | 0.498 ± 0.016 | 0.483 ± 0.019 |
+
+Balanced accuracy is the mean of the 5 per-class recalls. The paper's 5-class data is balanced and our fold 1 test split is not, so it is the closer figure to set beside the paper.
+
+**Per-class recall, CRNN, 3 seeds pooled** (rows: true class; columns: predicted):
+
+| true \ predicted | background | cargo | passengership | tanker | tug |
+|---|---|---|---|---|---|
+| background | **0.91** | 0.00 | 0.05 | 0.00 | 0.04 |
+| cargo | 0.00 | **0.48** | 0.10 | 0.34 | 0.08 |
+| passengership | 0.16 | 0.07 | **0.38** | 0.08 | 0.32 |
+| tanker | 0.00 | 0.41 | 0.07 | **0.42** | 0.11 |
+| tug | 0.06 | 0.04 | 0.21 | 0.04 | **0.65** |
+
+What it shows:
+
+1. **About 0.55 accuracy on the paper's 5 classes**, against the paper's 0.665 (SwinV2-Tiny) and 0.617 (MobileNetV3-Small, its only CNN). The earlier figure of about 0.60 to 0.62, read by eye from the confusion matrix, was too high.
+2. **Background is easy (about 0.9 recall); the ships are not.** Most errors are between two pairs: **cargo and tanker** (large merchant ships with similar engine sound) and **passengership and tug**.
+3. **The model ranking is unchanged:** CRNN slightly ahead of the CNN, within about one seed spread, and the LSTM alone clearly behind.
+
+**Not directly comparable to the paper.** The paper trains 5-class models, on its 5-class balanced bundle (213 h), with ImageNet-pretrained backbones, over 5 folds. These are 12-class models trained from scratch on 600 clips per class, rescored on fold 1 only. The open questions are how much more data helps (full-data spike) and how much pretraining helps (pretrained MobileNetV3 spike).
+
 ## Limits
 
 - One fold out of 5; fold-to-fold differences are likely larger than seed differences.

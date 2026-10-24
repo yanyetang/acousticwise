@@ -1,11 +1,22 @@
+"""Train the baseline on one fold from the feature cache.
+
+Usage:
+    uv run python -m acousticwise.train [--config FILE] [--fold N] [--classifier svm|random_forest]
+
+Writes <data.runs_dir>/baseline_fold<N>_<classifier>_<time>/ (technical design, section 5).
+"""
+
+import argparse
 import csv
 import json
 import platform
+import time
 from pathlib import Path
 
 import joblib
 import numpy as np
 import sklearn
+import yaml
 from sklearn.metrics import accuracy_score, f1_score
 
 from acousticwise.audio.cache import load_cache, settings_for
@@ -71,3 +82,32 @@ def _features(
 
 def _write_json(path: Path, data) -> None:
     path.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--config", default="configs/default.yaml")
+    parser.add_argument("--fold", type=int, help="official fold 1-5 (default: data.app_fold)")
+    parser.add_argument("--classifier", help="svm or random_forest (default: baseline.classifier)")
+    args = parser.parse_args()
+
+    with open(args.config) as f:
+        cfg = yaml.safe_load(f)
+    fold = args.fold or cfg["data"]["app_fold"]
+    if args.classifier:
+        cfg["baseline"]["classifier"] = args.classifier
+    name = f"baseline_fold{fold}_{cfg['baseline']['classifier']}_{time.strftime('%Y%m%d-%H%M%S')}"
+    run_dir = Path(cfg["data"]["runs_dir"]) / name
+
+    start = time.time()
+    train_baseline(cfg, fold, run_dir)
+    metrics = json.loads((run_dir / "metrics.json").read_text())["validation"]
+    print(
+        f"{run_dir}: validation accuracy {metrics['accuracy']:.3f}, "
+        f"macro-F1 {metrics['macro_f1']:.3f} on {metrics['clips']} clips, "
+        f"trained in {time.time() - start:.0f} s"
+    )
+
+
+if __name__ == "__main__":
+    main()

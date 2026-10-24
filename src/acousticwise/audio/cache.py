@@ -1,6 +1,13 @@
-from dataclasses import dataclass
+import csv
+import json
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import numpy as np
+
+from acousticwise.audio.features import log_mel
+from acousticwise.audio.io import load_audio
+from acousticwise.audio.preprocess import make_windows
 from acousticwise.data.dataset import Recording
 
 
@@ -19,4 +26,22 @@ class CacheSettings:
 
 def build_cache(recordings: list[Recording], out_dir: Path, settings: CacheSettings) -> None:
     """Write logmel.npy, index.csv and meta.json for the recordings into out_dir."""
-    raise NotImplementedError
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sr = settings.sample_rate
+    mels, row = [], []
+    for rec in recordings:
+        samples = load_audio(rec.path, target_sr=sr)
+        # A dataset clip is at most 5 s, so it gives exactly one window.
+        window = make_windows(
+            samples, sr, settings.window_seconds, settings.window_seconds, settings.min_seconds
+        )[0]
+        logmel = log_mel(window, sr, settings.n_mels, settings.n_fft, settings.hop_length)
+        mels.append(logmel.astype(np.float16))
+        row.append({"clip_id": rec.id, "row": len(mels) - 1, "label": rec.label})
+    np.save(out_dir / "logmel.npy", np.stack(mels))
+    with open(out_dir / "index.csv", "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=["clip_id", "row", "label"])
+        writer.writeheader()
+        writer.writerows(row)
+    with open(out_dir / "meta.json", "w") as f:
+        json.dump({"settings": asdict(settings)}, f, indent=2)

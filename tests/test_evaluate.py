@@ -1,6 +1,6 @@
 import pytest
 
-from acousticwise.evaluate import clip_scores
+from acousticwise.evaluate import clip_scores, vessel_counts
 
 
 def test_clip_scores_gives_the_headline_and_all_class_macro_f1():
@@ -31,3 +31,23 @@ def test_clip_scores_leaves_out_and_lists_classes_with_no_test_clips():
     # Averaged over cargo and tug; counting pilotvessel as 0 would give (2/3 + 1 + 0) / 3.
     assert scores["macro_f1_all"] == pytest.approx((2 / 3 + 1) / 2)
     assert scores["classes_without_clips"] == ["pilotvessel"]
+
+
+def test_vessel_counts_gives_vessels_and_largest_vessel_share_per_class():
+    # One entry per clip: its label (from the cache index) and its group (from the manifest).
+    labels = ["cargo", "tug", "cargo", "background", "tug", "cargo", "tug", "cargo", "tug"]
+    groups = [
+        "mmsi:1", "mmsi:4", "mmsi:2", "day:2017-03-01", "mmsi:4",
+        "mmsi:3", "mmsi:4", "mmsi:3", "mmsi:5",
+    ]  # fmt: skip
+
+    counts = vessel_counts(labels, groups)
+
+    assert counts == {
+        # cargo: 3 vessels; mmsi:3 has 2 of its 4 clips.
+        "cargo": {"vessels": 3, "largest_vessel_share": 0.5},
+        # tug: 2 vessels; mmsi:4 has 3 of its 4 clips, so the tug score rests mostly on one ship.
+        "tug": {"vessels": 2, "largest_vessel_share": 0.75},
+        # Background is grouped by day, so its "vessels" are recording days.
+        "background": {"vessels": 1, "largest_vessel_share": 1.0},
+    }

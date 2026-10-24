@@ -1,6 +1,7 @@
 import json
 
 import joblib
+import numpy as np
 import pytest
 import yaml
 
@@ -63,3 +64,20 @@ def test_train_baseline_writes_a_complete_run_directory(baseline_inputs, tmp_pat
     assert metrics["validation"]["accuracy"] == 1.0
     assert metrics["validation"]["macro_f1"] == 1.0
     assert metrics["validation"]["clips"] == 4
+
+
+@pytest.mark.parametrize("classifier", ["svm", "random_forest"])
+def test_train_baseline_with_the_same_seed_gives_the_same_model(
+    baseline_inputs, tmp_path, classifier
+):
+    cfg, _ = baseline_inputs
+    cfg["baseline"]["classifier"] = classifier
+
+    train_baseline(cfg, fold=1, run_dir=tmp_path / "a")
+    train_baseline(cfg, fold=1, run_dir=tmp_path / "b")
+
+    a = joblib.load(tmp_path / "a" / "model.joblib")
+    b = joblib.load(tmp_path / "b" / "model.joblib")
+    # Probabilities on a spread of inputs, not just the predicted class, so small differences show.
+    x = np.random.default_rng(1).normal(0, 50, size=(20, 40))
+    np.testing.assert_array_equal(a.predict_proba(x), b.predict_proba(x))

@@ -1,0 +1,12 @@
+,CNN,MobileNetV3,test vessels/days,test clips,MobileNetV3 - CNN
+background,0.618,0.563,82,362,-0.055
+cargo,0.422,0.442,311,457,0.02
+fishing,0.275,0.243,31,468,-0.032
+other,0.078,0.128,20,425,0.05
+passengership,0.257,0.245,13,432,-0.012
+pilotvessel,0.0,0.004,1,36,0.004
+pleasurecraft,0.282,0.254,50,445,-0.028
+rescue,0.087,0.097,3,412,0.01
+sailing,0.213,0.197,26,441,-0.016
+tanker,0.438,0.429,34,526,-0.009
+tug,0.301,0.314,39,473,0.013

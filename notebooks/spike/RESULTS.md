@@ -150,11 +150,34 @@ Full-data spreads are small (CNN 12-class ± 0.007, 5-class accuracy ± 0.018). 
 
 What it shows:
 
-1. **4.8× more data gives only small gains.** The CNN gains about 1 point of 12-class F1 and 3 points of 5-class accuracy; the CRNN gains nothing. Data quantity is not the main limit.
+1. **4.8× more data gives only small gains.** The CNN gains about 1 point of 12-class F1 and 3 points of 5-class accuracy; the CRNN gains nothing. Data quantity is not the main limit. The 12-class gain is about the size of the run-to-run noise between separate Kaggle runs (about 0.01, see the MobileNetV3 section), so only the 5-class gain is clearly above noise.
 2. **The limit is likely vessel variety, not clip count.** The extra clips mostly come from the same vessels: cargo already had about one clip per ship, while classes like passengership (88 training vessels) or pilotvessel (1) gain more clips of ships the model has already heard.
 3. **The CNN now leads the CRNN.** The CRNN's small capped-data lead (about one seed spread) has reversed. Together with the spike, there is no evidence yet that reading the time order helps.
 4. **The same confusions remain:** cargo vs tanker, and passengership vs tug.
 5. **5-class accuracy is about 0.57 (balanced 0.59),** against the paper's 0.617 for MobileNetV3-Small and 0.665 for Swin. Pretraining (the MobileNetV3 spike) is the remaining big difference to test.
+
+## Pretrained MobileNetV3-Small (rerun, 2026-10-24)
+
+Does ImageNet pretraining help? Notebook `notebooks/spike_pretrained/spike_mobilenetv3.ipynb` trains, in one run, our from-scratch **CNN** and an **ImageNet-pretrained MobileNetV3-Small** (torchvision `IMAGENET1K_V1`), the only CNN in the dataset paper. Same capped data as the spike (600 clips per class), same features, 25 epochs, 3 seeds. MobileNetV3 gets the log-mel repeated to 3 channels and resized to 224 × 224, its last layer replaced with 12 outputs, all layers fine-tuned at learning rate 1e-4 (the CNN keeps 1e-3). Raw outputs are in `notebooks/spike_pretrained/results/`.
+
+Mean ± std over 3 seeds, fold 1 test, both models from the same run:
+
+| Model | 12-class F1 | 9-class F1 | Accuracy | 5-class accuracy | 5-class balanced acc. | Train time / seed |
+|---|---|---|---|---|---|---|
+| **CNN** (from scratch, 242 k params) | **0.270 ± 0.014** | **0.320 ± 0.019** | **0.306 ± 0.006** | **0.548 ± 0.014** | **0.564 ± 0.010** | 175 s |
+| MobileNetV3 (pretrained, 1.5 M params) | 0.265 ± 0.001 | 0.313 ± 0.001 | 0.293 ± 0.003 | 0.535 ± 0.013 | 0.549 ± 0.013 | 201 s |
+
+![Validation macro-F1 per epoch, CNN vs MobileNetV3](../spike_pretrained/results/val_curves.png)
+
+What it shows:
+
+1. **Pretraining does not help here.** MobileNetV3 matches the CNN within the seed spread and is slightly behind on every score. The gap to the paper is not explained by pretraining alone in this setup.
+2. **It learns faster, then stops.** MobileNetV3 reaches its best validation score by epoch 7 to 15 and then drifts down slightly; the CNN keeps improving to epoch 20 or later. With only 7,200 training clips, the bigger network likely starts to overfit.
+3. **It is very consistent across seeds** (12-class F1 ± 0.001, against ± 0.014 for the CNN): pretrained weights give every seed the same starting point.
+4. **The two models get different clips wrong.** Their predictions agree on only 38% of test clips (seed 0), so combining them (averaging their scores) might help; untested.
+5. **Run-to-run noise:** this run's CNN scores 0.270 against 0.261 in the rescore rerun, with identical settings. Differences of about 0.01 between separate runs are noise; only same-run comparisons are reliable at that size.
+
+**Why the paper's MobileNetV3 does better (0.617 on 5 classes) is still open.** Differences left: it trains a 5-class model on its balanced 5-class bundle (213 h, far more vessels), at 20 kHz, with a very low learning rate (1e-6) over 30 epochs and 5 folds. Of these, the full-data run suggests **vessel variety** matters more than clip count; the paper's bigger bundle has many more vessels per class.
 
 ## Limits
 

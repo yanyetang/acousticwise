@@ -1,0 +1,122 @@
+{
+  "settings": {
+    "train_per_class": 600,
+    "val_per_class": 150,
+    "epochs": 25,
+    "learning_rate": {
+      "CNN": 0.001,
+      "MobileNetV3": 0.0001
+    },
+    "mobilenet_weights": "torchvision IMAGENET1K_V1",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "classes": [
+      "background",
+      "cargo",
+      "dredger",
+      "fishing",
+      "other",
+      "passengership",
+      "pilotvessel",
+      "pleasurecraft",
+      "rescue",
+      "sailing",
+      "tanker",
+      "tug"
+    ]
+  },
+  "clips": {
+    "train": 7200,
+    "validation": 1650,
+    "test": 4477
+  },
+  "summary": {
+    "CNN": {
+      "test_f1_12": [
+        0.27,
+        0.014
+      ],
+      "test_f1_9": [
+        0.32,
+        0.019
+      ],
+      "test_accuracy": [
+        0.306,
+        0.006
+      ],
+      "val_f1_12": [
+        0.314,
+        0.006
+      ],
+      "train_seconds": [
+        175.451,
+        0.714
+      ]
+    },
+    "MobileNetV3": {
+      "test_f1_12": [
+        0.265,
+        0.001
+      ],
+      "test_f1_9": [
+        0.313,
+        0.001
+      ],
+      "test_accuracy": [
+        0.293,
+        0.003
+      ],
+      "val_f1_12": [
+        0.303,
+        0.001
+      ],
+      "train_seconds": [
+        201.323,
+        0.353
+      ]
+    }
+  },
+  "five_class": {
+    "classes": [
+      "background",
+      "cargo",
+      "passengership",
+      "tanker",
+      "tug"
+    ],
+    "test_clips": 2250,
+    "summary": {
+      "CNN": {
+        "accuracy_5": [
+          0.548,
+          0.014
+        ],
+        "balanced_accuracy_5": [
+          0.564,
+          0.01
+        ],
+        "f1_5": [
+          0.552,
+          0.013
+        ]
+      },
+      "MobileNetV3": {
+        "accuracy_5": [
+          0.535,
+          0.013
+        ],
+        "balanced_accuracy_5": [
+          0.549,
+          0.013
+        ],
+        "f1_5": [
+          0.542,
+          0.01
+        ]
+      }
+    }
+  }
+}

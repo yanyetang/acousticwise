@@ -47,3 +47,8 @@ def format_report(rows: list[dict]) -> str:
                 f"{row['seconds'] / 3600:.2f} | {row['short_clips']} | {row['min_seconds']:.1f} |"
             )
     return "\n".join(lines) + "\n"
+
+
+def missing_classes(rows: list[dict]) -> dict[tuple[int, str], list[str]]:
+    """For each (fold, split) that lacks some class found elsewhere in rows: those classes."""
+    raise NotImplementedError

@@ -1,4 +1,4 @@
-from acousticwise.data.report import build_report, format_report
+from acousticwise.data.report import build_report, format_report, missing_classes
 from tests.conftest import clip_row
 
 
@@ -61,3 +61,24 @@ def test_format_report_writes_one_markdown_table_per_fold():
     )  # fmt: skip
 
     assert format_report(rows) == expected
+
+
+def test_missing_classes_lists_the_classes_a_split_has_no_clips_of():
+    rows = [
+        report_row(1, "train", "cargo", 10, 5, 50.0, 0, 5.0),
+        report_row(1, "train", "tug", 10, 5, 50.0, 0, 5.0),
+        report_row(1, "validation", "cargo", 2, 1, 10.0, 0, 5.0),
+        report_row(1, "validation", "tug", 2, 1, 10.0, 0, 5.0),
+        report_row(1, "test", "cargo", 2, 1, 10.0, 0, 5.0),  # no tug
+        report_row(2, "train", "cargo", 10, 5, 50.0, 0, 5.0),  # no tug
+        report_row(2, "validation", "cargo", 2, 1, 10.0, 0, 5.0),
+        report_row(2, "validation", "tug", 2, 1, 10.0, 0, 5.0),
+        report_row(2, "test", "tug", 2, 1, 10.0, 0, 5.0),  # no cargo
+    ]
+
+    # Only the splits with a gap, in the order of the rows; classes sorted by name.
+    assert list(missing_classes(rows).items()) == [
+        ((1, "test"), ["tug"]),
+        ((2, "train"), ["tug"]),
+        ((2, "test"), ["cargo"]),
+    ]

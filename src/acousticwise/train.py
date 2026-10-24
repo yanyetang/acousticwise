@@ -19,10 +19,17 @@ import numpy as np
 import sklearn
 import yaml
 from sklearn.metrics import accuracy_score, f1_score
+from sklearn.pipeline import Pipeline
 
 from acousticwise.audio.cache import load_cache, settings_for
 from acousticwise.data.splits import load_manifest
 from acousticwise.models.baseline import make_baseline, mfcc_features
+
+# One cache index entry: the clip's row in logmel.npy, its label and its offset in dB.
+IndexEntry = tuple[int, str, float]
+
+# The index.csv level each normalization method subtracts; "none" subtracts nothing.
+LEVEL_COLUMNS = {"peak": "peak_db", "rms": "rms_db", "none": None}
 
 
 def train_baseline(cfg: dict, fold: int, run_dir: Path) -> None:
@@ -49,7 +56,19 @@ def train_baseline(cfg: dict, fold: int, run_dir: Path) -> None:
             "clips": len(y_val),
         }
     }
+    _write_run(run_dir, cfg, fold, model, split, metrics, manifest_path)
 
+
+def _write_run(
+    run_dir: Path,
+    cfg: dict,
+    fold: int,
+    model: Pipeline,
+    split: dict,
+    metrics: dict,
+    manifest_path: Path,
+) -> None:
+    """Write the model and its record: config, labels, the fold's split and the metrics."""
     run_dir.mkdir(parents=True, exist_ok=True)
     joblib.dump(model, run_dir / "model.joblib")
     versions = {
@@ -72,19 +91,24 @@ def train_baseline(cfg: dict, fold: int, run_dir: Path) -> None:
     _write_json(run_dir / "metrics.json", metrics)
 
 
-def _read_index(cache_dir: Path, normalization: str) -> dict[str, tuple[int, str, float]]:
+def _read_index(cache_dir: Path, normalization: str) -> dict[str, IndexEntry]:
     """clip_id -> (row in logmel.npy, label, dB to add for the normalization method)."""
+    if normalization not in LEVEL_COLUMNS:
+        raise ValueError(
+            f"Unknown normalization {normalization!r}. Use {', '.join(LEVEL_COLUMNS)}."
+        )
+    column = LEVEL_COLUMNS[normalization]
     index = {}
     with open(cache_dir / "index.csv") as f:
         for r in csv.DictReader(f):
             # The index stores the window's levels, so normalizing is subtracting one of them.
-            offset = {"none": 0.0, "peak": -float(r["peak_db"]), "rms": -float(r["rms_db"])}
-            index[r["clip_id"]] = (int(r["row"]), r["label"], offset[normalization])
+            offset = -float(r[column]) if column else 0.0
+            index[r["clip_id"]] = (int(r["row"]), r["label"], offset)
     return index
 
 
 def _features(
-    logmel: np.ndarray, index: dict, entries: list[dict], n_mfcc: int
+    logmel: np.ndarray, index: dict[str, IndexEntry], entries: list[dict], n_mfcc: int
 ) -> tuple[np.ndarray, list[str]]:
     """MFCC features and labels for the manifest entries of one split."""
     rows, labels, offsets = zip(*(index[e["id"]] for e in entries), strict=True)

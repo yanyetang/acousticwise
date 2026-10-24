@@ -1,0 +1,40 @@
+[{"stream_name":"stderr","time":7.420737694,"data":"/usr/local/lib/python3.13/dist-packages/nbformat/validator.py:434: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":7.420847455,"data":"  _validate(nbdict, ref, version, version_minor, relax_add_props)\n"}
+,{"stream_name":"stderr","time":8.568134837,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.568180421,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.568187452,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.568192771,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":9.333133718,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.333180738,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.333187229,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.333191843,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":17.317179234,"data":"package: /kaggle/input/datasets/yanyetang/acousticwise-src\n"}
+,{"stream_name":"stdout","time":17.317224439,"data":"audio: {'sample_rate': 32000, 'window_seconds': 5.0, 'hop_seconds': 2.5, 'min_seconds': 4.0, 'normalization': 'none'}\n"}
+,{"stream_name":"stdout","time":17.317230428,"data":"features: {'n_fft': 2048, 'hop_length': 512, 'n_mels': 64, 'n_mfcc': 20, 'cache_format': 1}\n"}
+,{"stream_name":"stdout","time":254.87629713,"data":"joined in 237 s\n"}
+,{"stream_name":"stdout","time":255.668882762,"data":"            label  split                                                  clip_id         MMSI\n"}
+,{"stream_name":"stdout","time":255.668933505,"data":"0      background   test     background/20170201T153405.000Z_20170201T153410.000Z          0.0\n"}
+,{"stream_name":"stdout","time":255.668939252,"data":"1           cargo   test          cargo/20170429T015415.000Z_20170429T015420.000Z  538005362.0\n"}
+,{"stream_name":"stdout","time":255.668944198,"data":"2         dredger  train        dredger/20230923T053440.000Z_20230923T053445.000Z  316029592.0\n"}
+,{"stream_name":"stdout","time":255.668948122,"data":"3         fishing   test        fishing/20210509T050050.000Z_20210509T050055.000Z  368168280.0\n"}
+,{"stream_name":"stdout","time":255.668952024,"data":"4           other   test          other/20180624T080525.000Z_20180624T080530.000Z  367499170.0\n"}
+,{"stream_name":"stdout","time":255.66895594,"data":"5   passengership   test  passengership/20230802T141115.000Z_20230802T141120.000Z  316016150.0\n"}
+,{"stream_name":"stdout","time":255.668959699,"data":"6     pilotvessel   test    pilotvessel/20231108T171130.000Z_20231108T171135.000Z  316028723.0\n"}
+,{"stream_name":"stdout","time":255.6689635,"data":"7   pleasurecraft   test  pleasurecraft/20160704T205510.000Z_20160704T205515.000Z  338222046.0\n"}
+,{"stream_name":"stdout","time":255.668967216,"data":"8          rescue   test         rescue/20180822T025945.000Z_20180822T025950.000Z  316008174.0\n"}
+,{"stream_name":"stdout","time":255.668971015,"data":"9         sailing   test        sailing/20170805T165140.000Z_20170805T165145.000Z  316026941.0\n"}
+,{"stream_name":"stdout","time":255.668989698,"data":"10         tanker   test         tanker/20170326T231710.000Z_20170326T231715.000Z  538006805.0\n"}
+,{"stream_name":"stdout","time":255.668993064,"data":"11            tug   test            tug/20230429T175455.000Z_20230429T175500.000Z  316050769.0\n"}
+,{"stream_name":"stdout","time":279.429953632,"data":"{'background': (64, 313), 'cargo': (64, 313), 'dredger': (64, 313), 'fishing': (64, 313), 'other': (64, 313), 'passengership': (64, 313), 'pilotvessel': (64, 313), 'pleasurecraft': (64, 313), 'rescue': (64, 313), 'sailing': (64, 313), 'tanker': (64, 313), 'tug': (64, 313)}\n"}
+,{"stream_name":"stdout","time":285.962308845,"data":"saved /kaggle/working/spectrogram_grid.png\n"}
+,{"stream_name":"stderr","time":290.347495463,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":290.347562192,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":290.564456096,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":290.564505156,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":291.533091754,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":291.65728615,"data":"[NbConvertApp] Writing 1690423 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":294.77592149,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":295.47590781,"data":"[NbConvertApp] Support files will be in __results___files/\n"}
+,{"stream_name":"stderr","time":295.475945722,"data":"[NbConvertApp] Making directory __results___files\n"}
+,{"stream_name":"stderr","time":295.476720811,"data":"[NbConvertApp] Writing 311895 bytes to __results__.html\n"}
+]

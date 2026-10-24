@@ -8,6 +8,7 @@ Writes <data.runs_dir>/baseline_fold<N>_<classifier>_<time>/ (technical design, 
 
 import argparse
 import csv
+import hashlib
 import json
 import platform
 import time
@@ -33,7 +34,8 @@ def train_baseline(cfg: dict, fold: int, run_dir: Path) -> None:
     index = _read_index(cache_dir, cfg["audio"]["normalization"])
 
     # The manifest says which clips are this fold's train and validation clips.
-    split = load_manifest(Path(cfg["data"]["splits_path"]))["folds"][str(fold)]
+    manifest_path = Path(cfg["data"]["splits_path"])
+    split = load_manifest(manifest_path)["folds"][str(fold)]
     n_mfcc = cfg["features"]["n_mfcc"]
     x_train, y_train = _features(logmel, index, split["train"], n_mfcc)
     x_val, y_val = _features(logmel, index, split["validation"], n_mfcc)
@@ -55,7 +57,16 @@ def train_baseline(cfg: dict, fold: int, run_dir: Path) -> None:
         "numpy": np.__version__,
         "scikit-learn": sklearn.__version__,
     }
-    _write_json(run_dir / "config.json", {"config": cfg, "fold": fold, "versions": versions})
+    _write_json(
+        run_dir / "config.json",
+        {
+            "config": cfg,
+            "fold": fold,
+            "versions": versions,
+            # The manifest is not committed; its SHA-256 identifies the exact splits used.
+            "manifest_sha256": hashlib.sha256(manifest_path.read_bytes()).hexdigest(),
+        },
+    )
     _write_json(run_dir / "labels.json", list(model.classes_))
     _write_json(run_dir / "splits.json", split)
     _write_json(run_dir / "metrics.json", metrics)

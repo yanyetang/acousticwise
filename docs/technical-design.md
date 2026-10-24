@@ -3,7 +3,7 @@
 - **Status:** Draft v2 for review (revised 2026-10-09 for UniqueShip as the primary dataset)
 - **Date:** 2026-10-09
 - **Implements:** [`prd.md`](prd.md) (requirement IDs below refer to it)
-- **Scope:** structure, interfaces and data flow. Values marked *provisional* are fixed after the D3 dataset report.
+- **Scope:** structure, interfaces and data flow. Values marked *provisional* are fixed after the D3 dataset report ([`dataset-report.md`](dataset-report.md)).
 
 ## 1. Stack and layout
 
@@ -80,7 +80,7 @@ Recording ─▶ load_wav ─▶ resample/mono/normalize ─▶ window ─▶ fe
 ```
 
 **Preprocessing (D2), provisional defaults in `configs/default.yaml`:**
-- Source audio is 32 kHz, mono, 32-bit. Target rate is 32 kHz (native, Nyquist 16 kHz), set in config. Peak, RMS or no normalization is chosen on validation data during implementation; because a gain change is a constant offset in log-mel, it is applied when features are loaded, not baked into the cache. The spectrum check (2026-10-09, fold 1 train, up to 200 clips per class) found the 8-16 kHz band holds only 0.3 to 7.8% of power but is 13 to 18 dB above background for most ship classes, so 16 kHz would discard real signal. Once the baseline works, a 16 kHz versus 32 kHz comparison on validation data confirms the choice. Uploads at other rates are resampled to the target rate.
+- Source audio is 32 kHz, mono, 32-bit. Target rate is 32 kHz (native, Nyquist 16 kHz), set in config. Peak, RMS or no normalization is chosen on validation data during implementation; because a gain change is a constant offset in log-mel, it is applied when features are loaded, not baked into the cache. The dataset report found an 18 dB jump in recording level between periods (about −30.5 dBFS median RMS for one hydrophone in 2016–2018, about −48 dBFS otherwise), and classes are not spread evenly over the years, so raw loudness would let a model learn the period instead of the vessel. The spectrum check (2026-10-09, fold 1 train, up to 200 clips per class) found the 8-16 kHz band holds only 0.3 to 7.8% of power but is 13 to 18 dB above background for most ship classes, so 16 kHz would discard real signal. Once the baseline works, a 16 kHz versus 32 kHz comparison on validation data confirms the choice. Uploads at other rates are resampled to the target rate.
 - Window 5 s. Training clips already are 5 s, so no windowing; training clips under 5 s (minimum 4.0 s) are zero-padded to 5 s and kept; the cache build prints how many were padded, and the choice is revisited if it is more than about 1% of clips. Uploads of 4.0 s or more are zero-padded to one window in the same way; shorter uploads are rejected. Longer uploads use window 5 s and hop 2.5 s.
 - Log-mel: 64 bands up to the Nyquist, `n_fft=2048`, hop 512 at 32 kHz (the same 64 × 313 frames per window as `n_fft=1024`, hop 256 at 16 kHz, so the cache size does not change), in dB. Normalization and per-window standardization are applied on load.
 - MFCC: 20 coefficients computed from the 64-band log-mel (DCT), plus mean/std summary per window. Derived on load, so baseline settings change without rebuilding the cache.
@@ -151,7 +151,7 @@ class Prediction:
 | Near-silent (RMS below a threshold) | `SilentAudioError` |
 | Anything unexpected in model code | wrapped as `InferenceError` |
 
-Limits are *provisional* and set from D3.
+Limits, set from D3: at most 200 MB (Streamlit's default upload cap) and 300 s (60 windows); silence below RMS 1e-4 (−80 dBFS), 29 dB below the quietest clip in the dataset (−51 dBFS).
 
 ## 7. Application
 
@@ -184,7 +184,7 @@ Tests use synthetic audio, so the suite runs without the dataset.
 
 ## 10. Provisional values to settle after D3
 
-File size and duration limits (A4); silence threshold; which CNN fold ships in the app.
+Which CNN fold ships in the app. The A4 limits and the silence threshold were set from the dataset report (section 6).
 
 ## 11. Second dataset (P2) seam
 

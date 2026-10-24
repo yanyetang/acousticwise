@@ -2,7 +2,7 @@
 
 - **Status:** Draft v2 for review (revised 2026-10-09: primary dataset changed from ShipsEar to UniqueShip)
 - **Date:** 2026-10-08
-- **Target release:** 2026-12-02 (baseline-only fallback decided 2026-11-25; see the build plan)
+- **Target release:** 2026-12-02 (baseline-only fallback decided 2026-11-25; see [Phase E · CNN and CRNN](https://github.com/yanyetang/acousticwise/issues/5))
 - **Source:** `AcousticWise v1.docx` (Definition of Done, plan, stretch objective)
 
 ## 1. Problem, audience, goals, non-goals

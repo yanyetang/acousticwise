@@ -1,6 +1,5 @@
 # AcousticWise default config. Values follow the technical design
 # (docs/technical-design.md).
-# "provisional" values are set from the dataset report (S7).
 
 seed: 42
 
@@ -24,10 +23,10 @@ features:
   n_mfcc: 20                         # MFCC derived from the log-mel; mean/std summary = 40 values
   cache_format: 1                    # bump by hand when feature code changes
 
-validation:                          # provisional (S7)
-  max_file_mb: 50
-  max_seconds: 600
-  silence_rms: 1.0e-4
+validation:                          # set from the dataset report (docs/dataset-report.md)
+  max_file_mb: 200                   # Streamlit's default upload cap
+  max_seconds: 300                   # 5 minutes = 60 windows at a 5 s window
+  silence_rms: 1.0e-4                # -80 dBFS; the quietest dataset clip is -51 dBFS
 
 evaluation:
   nine_class_subset:                 # background plus classes with >= 50 training vessels in every fold

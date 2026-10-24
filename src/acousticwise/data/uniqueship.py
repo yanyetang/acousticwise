@@ -18,7 +18,8 @@ def read_split(bundle_dir: Path, fold: int, split: str) -> list[Recording]:
             path = Path(os.path.normpath(fold_dir / row["path"]))
             id = str(path.relative_to(bundle_dir / "audio").with_suffix(""))  # remove ".wav"
             group = f"mmsi:{row['MMSI']}" if row["label"] != "background" else f"day:{row['date']}"
-            recording = Recording(id=id, path=path, label=row["label"], group=group)
+            meta = {"duration_sec": float(row["duration_sec"])}
+            recording = Recording(id=id, path=path, label=row["label"], group=group, meta=meta)
             recordings.append(recording)
 
     return recordings

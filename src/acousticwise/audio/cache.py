@@ -54,6 +54,13 @@ def build_cache(
         logmel = log_mel(window, sr, settings.n_mels, settings.n_fft, settings.hop_length)
         mels.append(logmel.astype(np.float16))
         row.append({"clip_id": rec.id, "row": len(mels) - 1, "label": rec.label})
+
+    if len(failed) > 0 and len(failed) / len(recordings) > max_failed_fraction:
+        raise RuntimeError(
+            f"Too many clips failed to load: {len(failed)} of {len(recordings)} = "
+            f"{len(failed) / len(recordings):.3f} > {max_failed_fraction:.3f}"
+        )
+
     np.save(out_dir / "logmel.npy", np.stack(mels))
     with open(out_dir / "index.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["clip_id", "row", "label"])

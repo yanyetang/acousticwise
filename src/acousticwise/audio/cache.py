@@ -26,6 +26,12 @@ class CacheSettings:
 
 def build_cache(recordings: list[Recording], out_dir: Path, settings: CacheSettings) -> None:
     """Write logmel.npy, index.csv and meta.json for the recordings into out_dir."""
+    seen = set()
+    for rec in recordings:
+        if rec.id in seen:
+            raise ValueError(f"Duplicate clip id: {rec.id}")
+        seen.add(rec.id)
+
     out_dir.mkdir(parents=True, exist_ok=True)
     sr = settings.sample_rate
     mels, row = [], []

@@ -25,6 +25,22 @@ class CacheSettings:
     cache_format: int
 
 
+def settings_for(cfg: dict, sample_rate: int) -> CacheSettings:
+    """Cache settings at one sample rate, from the config's settings at its own rate."""
+    audio, features = cfg["audio"], cfg["features"]
+    # Scale n_fft and hop with the rate so every rate gives 64 x 313 frames per window.
+    scale = sample_rate / audio["sample_rate"]
+    return CacheSettings(
+        sample_rate=sample_rate,
+        window_seconds=audio["window_seconds"],
+        min_seconds=audio["min_seconds"],
+        n_fft=round(features["n_fft"] * scale),
+        hop_length=round(features["hop_length"] * scale),
+        n_mels=features["n_mels"],
+        cache_format=features["cache_format"],
+    )
+
+
 # The columns of index.csv; "row" is the clip's row in logmel.npy.
 INDEX_COLUMNS = ["clip_id", "row", "label", "padded", "peak_db", "rms_db"]
 

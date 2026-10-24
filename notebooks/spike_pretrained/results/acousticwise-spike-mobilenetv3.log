@@ -1,0 +1,85 @@
+[{"stream_name":"stderr","time":7.407844417,"data":"/usr/local/lib/python3.13/dist-packages/nbformat/validator.py:434: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":7.407883454,"data":"  _validate(nbdict, ref, version, version_minor, relax_add_props)\n"}
+,{"stream_name":"stderr","time":8.41403498,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.414066028,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.414071162,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.414074687,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":9.0464133,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":9.046442012,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":9.046447165,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":9.046450809,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":242.871126819,"data":"joined in 231 s\n"}
+,{"stream_name":"stdout","time":242.912909999,"data":"bundle root inside the zip: 'allclass_5hours/'\n"}
+,{"stream_name":"stdout","time":243.459889023,"data":"               train clips  validation clips  test clips  train groups  validation groups  test groups\n"}
+,{"stream_name":"stdout","time":243.459918927,"data":"label                                                                                                 \n"}
+,{"stream_name":"stdout","time":243.459925987,"data":"background             600               150         362           600                 79           82\n"}
+,{"stream_name":"stdout","time":243.459931547,"data":"cargo                  600               150         457           600                150          311\n"}
+,{"stream_name":"stdout","time":243.459936707,"data":"dredger                600               150           0             4                  2            0\n"}
+,{"stream_name":"stdout","time":243.45994258,"data":"fishing                600               150         468           190                 17           31\n"}
+,{"stream_name":"stdout","time":243.459948606,"data":"other                  600               150         425           135                 14           20\n"}
+,{"stream_name":"stdout","time":243.459955095,"data":"passengership          600               150         432            88                  9           13\n"}
+,{"stream_name":"stdout","time":243.459961612,"data":"pilotvessel            600                 0          36             1                  0            1\n"}
+,{"stream_name":"stdout","time":243.459966889,"data":"pleasurecraft          600               150         445           324                 32           50\n"}
+,{"stream_name":"stdout","time":243.459971983,"data":"rescue                 600               150         412            18                  2            3\n"}
+,{"stream_name":"stdout","time":243.459977367,"data":"sailing                600               150         441           169                 17           26\n"}
+,{"stream_name":"stdout","time":243.459982846,"data":"tanker                 600               150         526           186                 13           34\n"}
+,{"stream_name":"stdout","time":243.459998854,"data":"tug                    600               150         473           237                 21           39\n"}
+,{"stream_name":"stdout","time":394.739935826,"data":"train: (7200, 64, 313) in 151 s\n"}
+,{"stream_name":"stdout","time":425.431358577,"data":"validation: (1650, 64, 313) in 31 s\n"}
+,{"stream_name":"stdout","time":508.100926326,"data":"test: (4477, 64, 313) in 83 s\n"}
+,{"stream_name":"stdout","time":510.205514014,"data":"train mean -47.5 dB, std 14.5 dB\n"}
+,{"stream_name":"stdout","time":524.994874907,"data":"CNN        : 242,156 parameters\n"}
+,{"stream_name":"stdout","time":528.788755708,"data":"MobileNetV3: 1,530,156 parameters\n"}
+,{"stream_name":"stdout","time":529.341656193,"data":"device: cuda Tesla T4\n"}
+,{"stream_name":"stdout","time":704.548855277,"data":"CNN         seed 0: test 12-class F1 0.255, 9-class 0.299, best epoch 13, 175 s\n"}
+,{"stream_name":"stdout","time":880.704980926,"data":"CNN         seed 1: test 12-class F1 0.275, 9-class 0.328, best epoch 21, 176 s\n"}
+,{"stream_name":"stdout","time":1056.190705064,"data":"CNN         seed 2: test 12-class F1 0.280, 9-class 0.335, best epoch 22, 175 s\n"}
+,{"stream_name":"stdout","time":1258.01027252,"data":"MobileNetV3 seed 0: test 12-class F1 0.264, 9-class 0.314, best epoch 15, 202 s\n"}
+,{"stream_name":"stdout","time":1459.270608211,"data":"MobileNetV3 seed 1: test 12-class F1 0.266, 9-class 0.313, best epoch 9, 201 s\n"}
+,{"stream_name":"stdout","time":1660.238646727,"data":"MobileNetV3 seed 2: test 12-class F1 0.265, 9-class 0.312, best epoch 11, 201 s\n"}
+,{"stream_name":"stdout","time":1660.4377589,"data":"            test_f1_12        test_f1_9        test_accuracy        val_f1_12        train_seconds       \n"}
+,{"stream_name":"stdout","time":1660.437818302,"data":"                  mean    std      mean    std          mean    std      mean    std          mean    std\n"}
+,{"stream_name":"stdout","time":1660.437824493,"data":"model                                                                                                    \n"}
+,{"stream_name":"stdout","time":1660.43782949,"data":"CNN              0.270  0.014     0.320  0.019         0.306  0.006     0.314  0.006       175.451  0.714\n"}
+,{"stream_name":"stdout","time":1660.437834099,"data":"MobileNetV3      0.265  0.001     0.313  0.001         0.293  0.003     0.303  0.001       201.323  0.353\n"}
+,{"stream_name":"stdout","time":1660.437838718,"data":"\n"}
+,{"stream_name":"stdout","time":1660.437842923,"data":"Per-class test F1 (mean of 3 seeds):\n"}
+,{"stream_name":"stdout","time":1660.4378474,"data":"                 CNN  MobileNetV3  test vessels/days  test clips  MobileNetV3 - CNN\n"}
+,{"stream_name":"stdout","time":1660.43785186,"data":"background     0.618        0.563                 82         362             -0.055\n"}
+,{"stream_name":"stdout","time":1660.437856406,"data":"cargo          0.422        0.442                311         457              0.020\n"}
+,{"stream_name":"stdout","time":1660.437866303,"data":"fishing        0.275        0.243                 31         468             -0.032\n"}
+,{"stream_name":"stdout","time":1660.437870126,"data":"other          0.078        0.128                 20         425              0.050\n"}
+,{"stream_name":"stdout","time":1660.437873124,"data":"passengership  0.257        0.245                 13         432             -0.012\n"}
+,{"stream_name":"stdout","time":1660.437888947,"data":"pilotvessel    0.000        0.004                  1          36              0.004\n"}
+,{"stream_name":"stdout","time":1660.437895074,"data":"pleasurecraft  0.282        0.254                 50         445             -0.028\n"}
+,{"stream_name":"stdout","time":1660.437913127,"data":"rescue         0.087        0.097                  3         412              0.010\n"}
+,{"stream_name":"stdout","time":1660.437917184,"data":"sailing        0.213        0.197                 26         441             -0.016\n"}
+,{"stream_name":"stdout","time":1660.437920806,"data":"tanker         0.438        0.429                 34         526             -0.009\n"}
+,{"stream_name":"stdout","time":1660.437924358,"data":"tug            0.301        0.314                 39         473              0.013\n"}
+,{"stream_name":"stdout","time":1661.90133147,"data":"saved to /kaggle/working\n"}
+,{"stream_name":"stdout","time":1662.037796358,"data":"2250 test clips in the 5 classes:\n"}
+,{"stream_name":"stdout","time":1662.037823067,"data":"label\n"}
+,{"stream_name":"stdout","time":1662.037832819,"data":"background       362\n"}
+,{"stream_name":"stdout","time":1662.037836059,"data":"cargo            457\n"}
+,{"stream_name":"stdout","time":1662.037838457,"data":"passengership    432\n"}
+,{"stream_name":"stdout","time":1662.037840768,"data":"tanker           526\n"}
+,{"stream_name":"stdout","time":1662.037843444,"data":"tug              473\n"}
+,{"stream_name":"stdout","time":1662.037845754,"data":"\n"}
+,{"stream_name":"stdout","time":1662.037848064,"data":"            accuracy_5        balanced_accuracy_5          f1_5       \n"}
+,{"stream_name":"stdout","time":1662.037850545,"data":"                  mean    std                mean    std   mean    std\n"}
+,{"stream_name":"stdout","time":1662.03785298,"data":"model                                                                 \n"}
+,{"stream_name":"stdout","time":1662.03785537,"data":"CNN              0.548  0.014               0.564  0.010  0.552  0.013\n"}
+,{"stream_name":"stdout","time":1662.037857736,"data":"MobileNetV3      0.535  0.013               0.549  0.013  0.542  0.010\n"}
+,{"stream_name":"stdout","time":1662.037860136,"data":"saved five_class.csv, test_logits.npz and results.json[five_class] to /kaggle/working\n"}
+,{"stream_name":"stderr","time":1667.841938959,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":1667.841967697,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":1668.050898841,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":1668.050923259,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":1668.839891345,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":1668.924995632,"data":"[NbConvertApp] Writing 283891 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":1671.417162022,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":1672.059005043,"data":"[NbConvertApp] Support files will be in __results___files/\n"}
+,{"stream_name":"stderr","time":1672.059031941,"data":"[NbConvertApp] Making directory __results___files\n"}
+,{"stream_name":"stderr","time":1672.05935926,"data":"[NbConvertApp] Making directory __results___files\n"}
+,{"stream_name":"stderr","time":1672.059622197,"data":"[NbConvertApp] Writing 391370 bytes to __results__.html\n"}
+]

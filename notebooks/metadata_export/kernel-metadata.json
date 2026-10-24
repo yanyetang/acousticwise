@@ -1,0 +1,17 @@
+{
+  "id": "yanyetang/acousticwise-metadata-export",
+  "title": "AcousticWise metadata export",
+  "code_file": "metadata_export.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "yanyetang/uniqueship-12-class-5-hours"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

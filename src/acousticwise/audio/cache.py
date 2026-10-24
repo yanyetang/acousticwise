@@ -5,7 +5,7 @@ from pathlib import Path
 
 import numpy as np
 
-from acousticwise.audio.features import log_mel
+from acousticwise.audio.features import log_mel, normalization_offset_db
 from acousticwise.audio.io import load_audio
 from acousticwise.audio.preprocess import make_windows
 from acousticwise.data.dataset import Recording
@@ -54,7 +54,20 @@ def build_cache(
         )[0]
         logmel = log_mel(window, sr, settings.n_mels, settings.n_fft, settings.hop_length)
         mels.append(logmel.astype(np.float16))
-        row.append({"clip_id": rec.id, "row": len(mels) - 1, "label": rec.label, "padded": padded})
+
+        peak_db = -normalization_offset_db(window, method="peak")
+        rms_db = -normalization_offset_db(window, method="rms")
+
+        row.append(
+            {
+                "clip_id": rec.id,
+                "row": len(mels) - 1,
+                "label": rec.label,
+                "padded": padded,
+                "peak_db": peak_db,
+                "rms_db": rms_db,
+            }
+        )
 
     if len(failed) > 0 and len(failed) / len(recordings) > max_failed_fraction:
         raise RuntimeError(
@@ -64,7 +77,9 @@ def build_cache(
 
     np.save(out_dir / "logmel.npy", np.stack(mels))
     with open(out_dir / "index.csv", "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["clip_id", "row", "label", "padded"])
+        writer = csv.DictWriter(
+            f, fieldnames=["clip_id", "row", "label", "padded", "peak_db", "rms_db"]
+        )
         writer.writeheader()
         writer.writerows(row)
     meta = {
@@ -90,4 +105,5 @@ def load_cache(cache_dir: Path, settings: CacheSettings) -> np.ndarray:
         raise ValueError(
             f"Cache settings differ from the config: {'; '.join(diffs)}. Rebuild the cache."
         )
+
     return np.load(cache_dir / "logmel.npy", mmap_mode="r")

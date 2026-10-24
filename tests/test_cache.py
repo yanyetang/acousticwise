@@ -3,6 +3,7 @@ import json
 from dataclasses import asdict
 
 import numpy as np
+import pytest
 
 from acousticwise.audio.cache import CacheSettings, build_cache
 from acousticwise.audio.features import log_mel
@@ -51,3 +52,18 @@ def test_build_writes_logmel_index_and_meta(write_wav, tmp_path):
 
     meta = json.loads((out / "meta.json").read_text())
     assert meta["settings"] == asdict(SETTINGS)
+
+
+def test_duplicate_clip_ids_fail_the_build_before_writing(write_wav, tmp_path):
+    # Two clips with one id would make the index ambiguous: training could read
+    # the wrong row for a clip without any error.
+    recordings = [
+        make_recording(write_wav, "cargo", "a", tone(5.0, 32000)),
+        make_recording(write_wav, "cargo", "a", tone(5.0, 32000, freq=1000.0)),
+    ]
+    out = tmp_path / "cache"
+
+    with pytest.raises(ValueError, match="cargo/a"):
+        build_cache(recordings, out, SETTINGS)
+
+    assert not (out / "logmel.npy").exists()

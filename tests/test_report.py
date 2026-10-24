@@ -1,4 +1,4 @@
-from acousticwise.data.report import build_report
+from acousticwise.data.report import build_report, format_report
 from tests.conftest import clip_row
 
 
@@ -31,3 +31,33 @@ def test_report_counts_clips_groups_seconds_and_short_clips_per_split_and_class(
         {"fold": 1, "split": "test", "label": "tug", "clips": 1, "groups": 1,
          "seconds": 4.0, "short_clips": 1, "min_seconds": 4.0},
     ]  # fmt: skip
+
+
+def report_row(fold, split, label, clips, groups, seconds, short_clips, min_seconds):
+    return {"fold": fold, "split": split, "label": label, "clips": clips, "groups": groups,
+            "seconds": seconds, "short_clips": short_clips, "min_seconds": min_seconds}  # fmt: skip
+
+
+def test_format_report_writes_one_markdown_table_per_fold():
+    rows = [
+        report_row(1, "train", "cargo", 3600, 40, 17995.5, 1, 4.5),
+        report_row(1, "test", "tug", 720, 9, 3600.0, 0, 5.0),
+        report_row(2, "train", "cargo", 2880, 32, 14400.0, 0, 5.0),
+    ]
+
+    header = [
+        "| Split | Class | Clips | Vessels or days | Hours | Short clips | Shortest (s) |",
+        "|---|---|---:|---:|---:|---:|---:|",
+    ]
+    # Rows keep their order; hours have 2 decimals, the shortest clip 1 decimal.
+    expected = "\n".join(
+        ["## Fold 1", "", *header,
+         "| train | cargo | 3600 | 40 | 5.00 | 1 | 4.5 |",
+         "| test | tug | 720 | 9 | 1.00 | 0 | 5.0 |",
+         "",
+         "## Fold 2", "", *header,
+         "| train | cargo | 2880 | 32 | 4.00 | 0 | 5.0 |",
+         ""]
+    )  # fmt: skip
+
+    assert format_report(rows) == expected

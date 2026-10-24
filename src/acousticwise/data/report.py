@@ -25,3 +25,8 @@ def build_report(bundle_dir: Path, folds: list[int], window_seconds: float = 5.0
                     }
                 )
     return rows
+
+
+def format_report(rows: list[dict]) -> str:
+    """Markdown: one section per fold, with one table row per split and class."""
+    raise NotImplementedError

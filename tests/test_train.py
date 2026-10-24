@@ -1,3 +1,4 @@
+import hashlib
 import json
 
 import joblib
@@ -90,3 +91,14 @@ def test_train_baseline_refuses_a_cache_built_with_other_settings(baseline_input
     with pytest.raises(ValueError, match="n_mels: cache 64, config 32"):
         train_baseline(cfg, fold=1, run_dir=tmp_path / "run")
     assert not (tmp_path / "run").exists()  # nothing half-written
+
+
+def test_train_baseline_records_which_manifest_it_used(baseline_inputs, tmp_path):
+    cfg, _ = baseline_inputs
+
+    train_baseline(cfg, fold=1, run_dir=tmp_path / "run")
+
+    # The manifest is not committed, so the run keeps its SHA-256 to check a rebuilt one against.
+    manifest_bytes = (tmp_path / "splits.json").read_bytes()
+    saved = json.loads((tmp_path / "run" / "config.json").read_text())
+    assert saved["manifest_sha256"] == hashlib.sha256(manifest_bytes).hexdigest()

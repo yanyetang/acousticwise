@@ -6,9 +6,11 @@
 *.wav
 *.flac
 
-# Model weights (split manifests and metrics in artifacts/ stay tracked)
+# Model weights and split manifests (rebuilt by scripts/build_manifest.py; checksum in
+# DATA.md). Run configs and metrics in artifacts/ stay tracked.
 artifacts/**/*.pt
 artifacts/**/*.joblib
+artifacts/**/splits.json
 
 # Python
 __pycache__/

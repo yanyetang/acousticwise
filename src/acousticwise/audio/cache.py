@@ -36,11 +36,7 @@ def build_cache(
     max_failed_fraction: float = 0.001,
 ) -> None:
     """Write logmel.npy, index.csv and meta.json for the recordings into out_dir."""
-    seen = set()
-    for rec in recordings:
-        if rec.id in seen:
-            raise ValueError(f"Duplicate clip id: {rec.id}")
-        seen.add(rec.id)
+    _check_unique_ids(recordings)
 
     mels, rows, failed = [], [], []
     for rec in recordings:
@@ -52,14 +48,38 @@ def build_cache(
         rows.append({"clip_id": rec.id, "row": len(mels), "label": rec.label, **fields})
         mels.append(mel)
 
-    if len(failed) > 0 and len(failed) / len(recordings) > max_failed_fraction:
+    _check_failures(len(failed), len(recordings), max_failed_fraction)
+    _write_cache(out_dir, np.stack(mels), rows, settings, failed)
+
+
+def _check_unique_ids(recordings: list[Recording]) -> None:
+    """Raise ValueError naming the first clip id that appears twice."""
+    seen = set()
+    for rec in recordings:
+        if rec.id in seen:
+            raise ValueError(f"Duplicate clip id: {rec.id}")
+        seen.add(rec.id)
+
+
+def _check_failures(n_failed: int, n_total: int, max_failed_fraction: float) -> None:
+    """Raise RuntimeError when more than max_failed_fraction of the clips failed to load."""
+    if n_failed > 0 and n_failed / n_total > max_failed_fraction:
         raise RuntimeError(
-            f"Too many clips failed to load: {len(failed)} of {len(recordings)} = "
-            f"{len(failed) / len(recordings):.3f} > {max_failed_fraction:.3f}"
+            f"Too many clips failed to load: {n_failed} of {n_total} = "
+            f"{n_failed / n_total:.3f} > {max_failed_fraction:.3f}"
         )
 
+
+def _write_cache(
+    out_dir: Path,
+    logmel: np.ndarray,
+    rows: list[dict],
+    settings: CacheSettings,
+    failed: list[dict],
+) -> None:
+    """Write the three cache files into out_dir."""
     out_dir.mkdir(parents=True, exist_ok=True)
-    np.save(out_dir / "logmel.npy", np.stack(mels))
+    np.save(out_dir / "logmel.npy", logmel)
     with open(out_dir / "index.csv", "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=INDEX_COLUMNS)
         writer.writeheader()

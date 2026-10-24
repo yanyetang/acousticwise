@@ -25,6 +25,10 @@ class CacheSettings:
     cache_format: int
 
 
+# The columns of index.csv; "row" is the clip's row in logmel.npy.
+INDEX_COLUMNS = ["clip_id", "row", "label", "padded", "peak_db", "rms_db"]
+
+
 def build_cache(
     recordings: list[Recording],
     out_dir: Path,
@@ -38,36 +42,15 @@ def build_cache(
             raise ValueError(f"Duplicate clip id: {rec.id}")
         seen.add(rec.id)
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    sr = settings.sample_rate
-    mels, row, failed = [], [], []
+    mels, rows, failed = [], [], []
     for rec in recordings:
         try:
-            samples = load_audio(rec.path, target_sr=sr)
+            mel, fields = _process_clip(rec, settings)
         except UnsupportedFileError as e:
             failed.append({"clip_id": rec.id, "reason": str(e)})
             continue
-        # A dataset clip is at most 5 s, so it gives exactly one window.
-        padded = len(samples) < round(settings.window_seconds * sr)
-        window = make_windows(
-            samples, sr, settings.window_seconds, settings.window_seconds, settings.min_seconds
-        )[0]
-        logmel = log_mel(window, sr, settings.n_mels, settings.n_fft, settings.hop_length)
-        mels.append(logmel.astype(np.float16))
-
-        peak_db = -normalization_offset_db(window, method="peak")
-        rms_db = -normalization_offset_db(window, method="rms")
-
-        row.append(
-            {
-                "clip_id": rec.id,
-                "row": len(mels) - 1,
-                "label": rec.label,
-                "padded": padded,
-                "peak_db": peak_db,
-                "rms_db": rms_db,
-            }
-        )
+        rows.append({"clip_id": rec.id, "row": len(mels), "label": rec.label, **fields})
+        mels.append(mel)
 
     if len(failed) > 0 and len(failed) / len(recordings) > max_failed_fraction:
         raise RuntimeError(
@@ -75,20 +58,37 @@ def build_cache(
             f"{len(failed) / len(recordings):.3f} > {max_failed_fraction:.3f}"
         )
 
+    out_dir.mkdir(parents=True, exist_ok=True)
     np.save(out_dir / "logmel.npy", np.stack(mels))
     with open(out_dir / "index.csv", "w", newline="") as f:
-        writer = csv.DictWriter(
-            f, fieldnames=["clip_id", "row", "label", "padded", "peak_db", "rms_db"]
-        )
+        writer = csv.DictWriter(f, fieldnames=INDEX_COLUMNS)
         writer.writeheader()
-        writer.writerows(row)
+        writer.writerows(rows)
     meta = {
         "settings": asdict(settings),
-        "padded_count": sum(r["padded"] for r in row),
+        "padded_count": sum(r["padded"] for r in rows),
         "failed": failed,
     }
     with open(out_dir / "meta.json", "w") as f:
         json.dump(meta, f, indent=2)
+
+
+def _process_clip(rec: Recording, settings: CacheSettings) -> tuple[np.ndarray, dict]:
+    """Load one clip; return its float16 log-mel and its padded flag and levels."""
+    sr = settings.sample_rate
+    samples = load_audio(rec.path, target_sr=sr)
+    padded = len(samples) < round(settings.window_seconds * sr)
+    # A dataset clip is at most 5 s, so it gives exactly one window.
+    window = make_windows(
+        samples, sr, settings.window_seconds, settings.window_seconds, settings.min_seconds
+    )[0]
+    mel = log_mel(window, sr, settings.n_mels, settings.n_fft, settings.hop_length)
+    fields = {
+        "padded": padded,
+        "peak_db": -normalization_offset_db(window, method="peak"),
+        "rms_db": -normalization_offset_db(window, method="rms"),
+    }
+    return mel.astype(np.float16), fields
 
 
 def load_cache(cache_dir: Path, settings: CacheSettings) -> np.ndarray:

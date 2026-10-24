@@ -16,6 +16,7 @@ def test_vessel_clip_becomes_a_recording_grouped_by_mmsi(make_bundle):
             path=bundle / "audio" / "cargo" / "20220103T120000_20220103T120005.wav",
             label="cargo",
             group="mmsi:316001234",
+            meta={"duration_sec": 5.0},
         )
     ]
 

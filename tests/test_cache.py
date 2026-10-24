@@ -144,3 +144,18 @@ def test_loading_with_changed_settings_fails_and_names_the_fields(write_wav, tmp
     assert "n_mels" in str(err.value)
     assert "hop_length" in str(err.value)
     assert "n_fft" not in str(err.value)
+
+
+def test_index_stores_each_clips_peak_and_rms_level_in_db(write_wav, tmp_path):
+    # A sine of amplitude 0.5 has peak 0.5 (-6.02 dB) and RMS 0.5 / sqrt(2) (-9.03 dB).
+    # Storing the levels lets training pick peak, RMS or no normalization without a
+    # rebuild: the offset is minus the level.
+    recordings = [make_recording(write_wav, "cargo", "a", tone(5.0, 32000, amplitude=0.5))]
+    out = tmp_path / "cache"
+
+    build_cache(recordings, out, SETTINGS)
+
+    with open(out / "index.csv") as f:
+        [clip] = list(csv.DictReader(f))
+    assert float(clip["peak_db"]) == pytest.approx(20 * np.log10(0.5), abs=1e-3)
+    assert float(clip["rms_db"]) == pytest.approx(20 * np.log10(0.5 / np.sqrt(2)), abs=1e-3)

@@ -1,0 +1,17 @@
+{
+  "id": "yanyetang/acousticwise-spike-full-data",
+  "title": "AcousticWise spike full data",
+  "code_file": "spike_full_data.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "yanyetang/uniqueship-12-class-5-hours"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}

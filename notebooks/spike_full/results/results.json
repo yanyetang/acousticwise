@@ -1,0 +1,154 @@
+{
+  "settings": {
+    "train_per_class": null,
+    "val_per_class": null,
+    "class_weighted": true,
+    "epochs": 25,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "classes": [
+      "background",
+      "cargo",
+      "dredger",
+      "fishing",
+      "other",
+      "passengership",
+      "pilotvessel",
+      "pleasurecraft",
+      "rescue",
+      "sailing",
+      "tanker",
+      "tug"
+    ]
+  },
+  "clips": {
+    "train": 34286,
+    "validation": 4445,
+    "test": 4477
+  },
+  "summary": {
+    "CNN": {
+      "test_f1_12": [
+        0.271,
+        0.007
+      ],
+      "test_f1_9": [
+        0.325,
+        0.008
+      ],
+      "test_accuracy": [
+        0.307,
+        0.008
+      ],
+      "val_f1_12": [
+        0.331,
+        0.01
+      ],
+      "train_seconds": [
+        783.121,
+        1.666
+      ]
+    },
+    "CRNN": {
+      "test_f1_12": [
+        0.26,
+        0.003
+      ],
+      "test_f1_9": [
+        0.315,
+        0.002
+      ],
+      "test_accuracy": [
+        0.299,
+        0.005
+      ],
+      "val_f1_12": [
+        0.331,
+        0.011
+      ],
+      "train_seconds": [
+        807.131,
+        0.652
+      ]
+    },
+    "LSTM": {
+      "test_f1_12": [
+        0.241,
+        0.004
+      ],
+      "test_f1_9": [
+        0.289,
+        0.004
+      ],
+      "test_accuracy": [
+        0.272,
+        0.003
+      ],
+      "val_f1_12": [
+        0.293,
+        0.018
+      ],
+      "train_seconds": [
+        241.486,
+        0.761
+      ]
+    }
+  },
+  "five_class": {
+    "classes": [
+      "background",
+      "cargo",
+      "passengership",
+      "tanker",
+      "tug"
+    ],
+    "test_clips": 2250,
+    "summary": {
+      "CNN": {
+        "accuracy_5": [
+          0.572,
+          0.018
+        ],
+        "balanced_accuracy_5": [
+          0.591,
+          0.017
+        ],
+        "f1_5": [
+          0.579,
+          0.02
+        ]
+      },
+      "CRNN": {
+        "accuracy_5": [
+          0.543,
+          0.01
+        ],
+        "balanced_accuracy_5": [
+          0.557,
+          0.01
+        ],
+        "f1_5": [
+          0.536,
+          0.01
+        ]
+      },
+      "LSTM": {
+        "accuracy_5": [
+          0.489,
+          0.013
+        ],
+        "balanced_accuracy_5": [
+          0.503,
+          0.016
+        ],
+        "f1_5": [
+          0.491,
+          0.015
+        ]
+      }
+    }
+  }
+}

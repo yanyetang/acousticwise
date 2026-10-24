@@ -9,6 +9,7 @@ from acousticwise.audio.features import log_mel
 from acousticwise.audio.io import load_audio
 from acousticwise.audio.preprocess import make_windows
 from acousticwise.data.dataset import Recording
+from acousticwise.errors import UnsupportedFileError
 
 
 @dataclass(frozen=True)
@@ -24,7 +25,12 @@ class CacheSettings:
     cache_format: int
 
 
-def build_cache(recordings: list[Recording], out_dir: Path, settings: CacheSettings) -> None:
+def build_cache(
+    recordings: list[Recording],
+    out_dir: Path,
+    settings: CacheSettings,
+    max_failed_fraction: float = 0.001,
+) -> None:
     """Write logmel.npy, index.csv and meta.json for the recordings into out_dir."""
     seen = set()
     for rec in recordings:
@@ -34,9 +40,13 @@ def build_cache(recordings: list[Recording], out_dir: Path, settings: CacheSetti
 
     out_dir.mkdir(parents=True, exist_ok=True)
     sr = settings.sample_rate
-    mels, row = [], []
+    mels, row, failed = [], [], []
     for rec in recordings:
-        samples = load_audio(rec.path, target_sr=sr)
+        try:
+            samples = load_audio(rec.path, target_sr=sr)
+        except UnsupportedFileError as e:
+            failed.append({"clip_id": rec.id, "reason": str(e)})
+            continue
         # A dataset clip is at most 5 s, so it gives exactly one window.
         window = make_windows(
             samples, sr, settings.window_seconds, settings.window_seconds, settings.min_seconds
@@ -50,4 +60,4 @@ def build_cache(recordings: list[Recording], out_dir: Path, settings: CacheSetti
         writer.writeheader()
         writer.writerows(row)
     with open(out_dir / "meta.json", "w") as f:
-        json.dump({"settings": asdict(settings)}, f, indent=2)
+        json.dump({"settings": asdict(settings), "failed": failed}, f, indent=2)

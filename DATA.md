@@ -39,7 +39,7 @@ zip -s 0 allclass_5hours.zip --out allclass_5hours_joined.zip && unzip -q allcla
 - Splits are grouped by vessel (MMSI), with background split by whole day. In every fold: zero shared MMSI between train/validation, train/test and validation/test; zero shared background days; and zero shared vessels between any two folds' test sets.
 - Distinct vessels per class in fold 1's training set: cargo 2,017; pleasurecraft 324; tug 237; fishing 190; tanker 186; sailing 169; other 135; passengership 88; rescue 18; dredger 4; pilotvessel 1. Audio is balanced by hours, not by vessels (see the PRD).
 
-The two checks below ran on Kaggle on 2026-10-09 with `notebooks/kaggle_data_prep.ipynb`. The dataset report (D3) will regenerate them from the package code.
+The two checks below ran on Kaggle on 2026-10-09 with `notebooks/kaggle_data_prep.ipynb`. The dataset report ([`docs/dataset-report.md`](docs/dataset-report.md)) regenerates the vessel counts from the package code, and its numbers agree with the table below.
 
 **Distinct vessels per class, all five folds** (train/validation/test; background has no vessels):
 

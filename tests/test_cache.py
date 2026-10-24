@@ -108,3 +108,24 @@ def test_too_many_failures_stop_the_build_before_writing(write_wav, tmp_path):
         build_cache(recordings, out, SETTINGS)
 
     assert not (out / "logmel.npy").exists()
+
+
+def test_padded_clips_are_flagged_in_index_and_counted_in_meta(write_wav, tmp_path):
+    # A 4.5 s clip is zero-padded to one 5 s window; a 5 s clip is not.
+    recordings = [
+        make_recording(write_wav, "cargo", "a", tone(5.0, 32000)),
+        make_recording(write_wav, "tug", "b", tone(4.5, 32000)),
+    ]
+    out = tmp_path / "cache"
+
+    build_cache(recordings, out, SETTINGS)
+
+    with open(out / "index.csv") as f:
+        index = list(csv.DictReader(f))
+    assert [(r["clip_id"], r["padded"]) for r in index] == [
+        ("cargo/a", "False"),
+        ("tug/b", "True"),
+    ]
+
+    meta = json.loads((out / "meta.json").read_text())
+    assert meta["padded_count"] == 1

@@ -21,3 +21,6 @@ __pycache__/
 docs/research_notes/
 docs/reports/
 docs/superpowers/
+
+# Editor settings (personal)
+.vscode/

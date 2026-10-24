@@ -1,0 +1,92 @@
+[{"stream_name":"stderr","time":6.871339354,"data":"/usr/local/lib/python3.13/dist-packages/nbformat/validator.py:434: MissingIDFieldWarning: Cell is missing an id field, this will become a hard error in future nbformat versions. You may want to use `normalize()` on your notebooks before validations (available since nbformat 5.1.4). Previous versions of nbformat are fixing this issue transparently, and will stop doing so in the future.\n"}
+,{"stream_name":"stderr","time":6.871375993,"data":"  _validate(nbdict, ref, version, version_minor, relax_add_props)\n"}
+,{"stream_name":"stderr","time":7.880535451,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":7.880561715,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":7.8805670249999995,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":7.880570899,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stderr","time":8.505781325,"data":"0.00s - Debugger warning: It seems that frozen modules are being used, which may\n"}
+,{"stream_name":"stderr","time":8.505808714,"data":"0.00s - make the debugger miss breakpoints. Please pass -Xfrozen_modules=off\n"}
+,{"stream_name":"stderr","time":8.505813775,"data":"0.00s - to python to disable frozen modules.\n"}
+,{"stream_name":"stderr","time":8.505817584999999,"data":"0.00s - Note: Debugging will proceed. Set PYDEVD_DISABLE_FILE_VALIDATION=1 to disable this validation.\n"}
+,{"stream_name":"stdout","time":221.057130025,"data":"joined in 210 s\n"}
+,{"stream_name":"stdout","time":221.093668428,"data":"bundle root inside the zip: 'allclass_5hours/'\n"}
+,{"stream_name":"stdout","time":222.428428605,"data":"               train clips  validation clips  test clips  train groups  validation groups  test groups\n"}
+,{"stream_name":"stdout","time":222.428455308,"data":"label                                                                                                 \n"}
+,{"stream_name":"stdout","time":222.428461584,"data":"background            2880               358         362           641                 79           82\n"}
+,{"stream_name":"stdout","time":222.428467189,"data":"cargo                 2865               279         457          2017                194          311\n"}
+,{"stream_name":"stdout","time":222.428472116,"data":"dredger               1920              1681           0             4                  2            0\n"}
+,{"stream_name":"stdout","time":222.42847719,"data":"fishing               2877               256         468           190                 17           31\n"}
+,{"stream_name":"stdout","time":222.428482794,"data":"other                 2878               298         425           135                 14           20\n"}
+,{"stream_name":"stdout","time":222.428487668,"data":"passengership         2879               289         432            88                  9           13\n"}
+,{"stream_name":"stdout","time":222.428492776,"data":"pilotvessel           3565                 0          36             1                  0            1\n"}
+,{"stream_name":"stdout","time":222.428497989,"data":"pleasurecraft         2871               284         445           324                 32           50\n"}
+,{"stream_name":"stdout","time":222.428503433,"data":"rescue                2932               256         412            18                  2            3\n"}
+,{"stream_name":"stdout","time":222.428513897,"data":"sailing               2871               289         441           169                 17           26\n"}
+,{"stream_name":"stdout","time":222.428518647,"data":"tanker                2877               198         526           186                 13           34\n"}
+,{"stream_name":"stdout","time":222.428533429,"data":"tug                   2871               257         473           237                 21           39\n"}
+,{"stream_name":"stdout","time":835.947008093,"data":"train: (34286, 64, 313) in 613 s\n"}
+,{"stream_name":"stdout","time":916.196849682,"data":"validation: (4445, 64, 313) in 80 s\n"}
+,{"stream_name":"stdout","time":991.659199207,"data":"test: (4477, 64, 313) in 75 s\n"}
+,{"stream_name":"stdout","time":1001.928218669,"data":"train mean -47.3 dB, std 14.5 dB\n"}
+,{"stream_name":"stdout","time":1009.776806068,"data":"CNN : 242,156 parameters\n"}
+,{"stream_name":"stdout","time":1009.77685247,"data":"CRNN: 341,484 parameters\n"}
+,{"stream_name":"stdout","time":1009.776859601,"data":"LSTM: 201,740 parameters\n"}
+,{"stream_name":"stdout","time":1010.559458029,"data":"device: cuda Tesla T4\n"}
+,{"stream_name":"stdout","time":1010.695295504,"data":"class weights: {'background': 0.99, 'cargo': 1.0, 'dredger': 1.49, 'fishing': 0.99, 'other': 0.99, 'passengership': 0.99, 'pilotvessel': 0.8, 'pleasurecraft': 1.0, 'rescue': 0.97, 'sailing': 1.0, 'tanker': 0.99, 'tug': 1.0}\n"}
+,{"stream_name":"stdout","time":1797.959455303,"data":"CNN  seed 0: test 12-class F1 0.265, 9-class 0.316, best epoch 10, 781 s\n"}
+,{"stream_name":"stdout","time":2582.792276019,"data":"CNN  seed 1: test 12-class F1 0.278, 9-class 0.331, best epoch 17, 785 s\n"}
+,{"stream_name":"stdout","time":3365.849155453,"data":"CNN  seed 2: test 12-class F1 0.269, 9-class 0.328, best epoch 11, 783 s\n"}
+,{"stream_name":"stdout","time":4172.608738116,"data":"CRNN seed 0: test 12-class F1 0.263, 9-class 0.318, best epoch 14, 807 s\n"}
+,{"stream_name":"stdout","time":4979.415947155,"data":"CRNN seed 1: test 12-class F1 0.259, 9-class 0.315, best epoch 23, 807 s\n"}
+,{"stream_name":"stdout","time":5787.307230941,"data":"CRNN seed 2: test 12-class F1 0.258, 9-class 0.313, best epoch 10, 808 s\n"}
+,{"stream_name":"stdout","time":6028.951100366,"data":"LSTM seed 0: test 12-class F1 0.242, 9-class 0.290, best epoch 16, 242 s\n"}
+,{"stream_name":"stdout","time":6271.11519311,"data":"LSTM seed 1: test 12-class F1 0.237, 9-class 0.285, best epoch 17, 242 s\n"}
+,{"stream_name":"stdout","time":6511.581833155,"data":"LSTM seed 2: test 12-class F1 0.245, 9-class 0.293, best epoch 15, 241 s\n"}
+,{"stream_name":"stdout","time":6511.785724442,"data":"      test_f1_12        test_f1_9        test_accuracy        val_f1_12        train_seconds       \n"}
+,{"stream_name":"stdout","time":6511.78576962,"data":"            mean    std      mean    std          mean    std      mean    std          mean    std\n"}
+,{"stream_name":"stdout","time":6511.785775642,"data":"model                                                                                              \n"}
+,{"stream_name":"stdout","time":6511.785780249,"data":"CNN        0.271  0.007     0.325  0.008         0.307  0.008     0.331  0.010       783.121  1.666\n"}
+,{"stream_name":"stdout","time":6511.785784705,"data":"CRNN       0.260  0.003     0.315  0.002         0.299  0.005     0.331  0.011       807.131  0.652\n"}
+,{"stream_name":"stdout","time":6511.785789085,"data":"LSTM       0.241  0.004     0.289  0.004         0.272  0.003     0.293  0.018       241.486  0.761\n"}
+,{"stream_name":"stdout","time":6511.78579713,"data":"\n"}
+,{"stream_name":"stdout","time":6511.785800273,"data":"Per-class test F1 (mean of 3 seeds):\n"}
+,{"stream_name":"stdout","time":6511.785803207,"data":"                 CNN   CRNN   LSTM  test vessels/days  test clips  CRNN - CNN  LSTM - CNN\n"}
+,{"stream_name":"stdout","time":6511.785806598,"data":"background     0.656  0.646  0.584                 82         362      -0.010      -0.072\n"}
+,{"stream_name":"stdout","time":6511.78583677,"data":"cargo          0.477  0.402  0.359                311         457      -0.075      -0.118\n"}
+,{"stream_name":"stdout","time":6511.785841467,"data":"fishing        0.196  0.200  0.137                 31         468       0.004      -0.059\n"}
+,{"stream_name":"stdout","time":6511.785845717,"data":"other          0.091  0.096  0.096                 20         425       0.005       0.005\n"}
+,{"stream_name":"stdout","time":6511.785849344,"data":"passengership  0.281  0.230  0.153                 13         432      -0.051      -0.128\n"}
+,{"stream_name":"stdout","time":6511.785852564,"data":"pilotvessel    0.000  0.000  0.000                  1          36       0.000       0.000\n"}
+,{"stream_name":"stdout","time":6511.785856532,"data":"pleasurecraft  0.211  0.257  0.285                 50         445       0.046       0.074\n"}
+,{"stream_name":"stdout","time":6511.785860485,"data":"rescue         0.056  0.025  0.051                  3         412      -0.031      -0.005\n"}
+,{"stream_name":"stdout","time":6511.7858646,"data":"sailing        0.273  0.228  0.277                 26         441      -0.045       0.004\n"}
+,{"stream_name":"stdout","time":6511.785868592,"data":"tanker         0.447  0.487  0.456                 34         526       0.040       0.009\n"}
+,{"stream_name":"stdout","time":6511.785872286,"data":"tug            0.291  0.292  0.256                 39         473       0.001      -0.035\n"}
+,{"stream_name":"stdout","time":6513.733650051,"data":"saved to /kaggle/working\n"}
+,{"stream_name":"stdout","time":6513.915810257,"data":"2250 test clips in the 5 classes:\n"}
+,{"stream_name":"stdout","time":6513.915846093,"data":"label\n"}
+,{"stream_name":"stdout","time":6513.915851399,"data":"background       362\n"}
+,{"stream_name":"stdout","time":6513.915854789,"data":"cargo            457\n"}
+,{"stream_name":"stdout","time":6513.91585798,"data":"passengership    432\n"}
+,{"stream_name":"stdout","time":6513.915862097,"data":"tanker           526\n"}
+,{"stream_name":"stdout","time":6513.915865744,"data":"tug              473\n"}
+,{"stream_name":"stdout","time":6513.915883939,"data":"\n"}
+,{"stream_name":"stdout","time":6513.915887337,"data":"      accuracy_5        balanced_accuracy_5          f1_5       \n"}
+,{"stream_name":"stdout","time":6513.915890534,"data":"            mean    std                mean    std   mean    std\n"}
+,{"stream_name":"stdout","time":6513.915894055,"data":"model                                                           \n"}
+,{"stream_name":"stdout","time":6513.915900378,"data":"CNN        0.572  0.018               0.591  0.017  0.579  0.020\n"}
+,{"stream_name":"stdout","time":6513.915904046,"data":"CRNN       0.543  0.010               0.557  0.010  0.536  0.010\n"}
+,{"stream_name":"stdout","time":6513.915907308,"data":"LSTM       0.489  0.013               0.503  0.016  0.491  0.015\n"}
+,{"stream_name":"stdout","time":6513.91591085,"data":"saved five_class.csv, test_logits.npz and results.json[five_class] to /kaggle/working\n"}
+,{"stream_name":"stderr","time":6520.257395731,"data":"/usr/local/lib/python3.13/dist-packages/mistune.py:435: SyntaxWarning: invalid escape sequence '\\|'\n"}
+,{"stream_name":"stderr","time":6520.257442062,"data":"  cells[i][c] = re.sub('\\\\\\\\\\|', '|', cell)\n"}
+,{"stream_name":"stderr","time":6520.453964827,"data":"/usr/local/lib/python3.13/dist-packages/nbconvert/filters/filter_links.py:36: SyntaxWarning: invalid escape sequence '\\_'\n"}
+,{"stream_name":"stderr","time":6520.453998049,"data":"  text = re.sub(r'_', '\\_', text) # Escape underscores in display text\n"}
+,{"stream_name":"stderr","time":6521.227836556,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to notebook\n"}
+,{"stream_name":"stderr","time":6521.315019589,"data":"[NbConvertApp] Writing 370141 bytes to __notebook__.ipynb\n"}
+,{"stream_name":"stderr","time":6523.768807407,"data":"[NbConvertApp] Converting notebook __notebook__.ipynb to html\n"}
+,{"stream_name":"stderr","time":6524.403911749,"data":"[NbConvertApp] Support files will be in __results___files/\n"}
+,{"stream_name":"stderr","time":6524.403969505,"data":"[NbConvertApp] Making directory __results___files\n"}
+,{"stream_name":"stderr","time":6524.404343439,"data":"[NbConvertApp] Making directory __results___files\n"}
+,{"stream_name":"stderr","time":6524.404656002,"data":"[NbConvertApp] Writing 390347 bytes to __results__.html\n"}
+]

@@ -51,4 +51,12 @@ def format_report(rows: list[dict]) -> str:
 
 def missing_classes(rows: list[dict]) -> dict[tuple[int, str], list[str]]:
     """For each (fold, split) that lacks some class found elsewhere in rows: those classes."""
-    raise NotImplementedError
+    present = {}
+    for row in rows:
+        present.setdefault((row["fold"], row["split"]), set()).add(row["label"])
+    all_labels = {row["label"] for row in rows}
+    missing = {}
+    for key, labels in present.items():
+        if labels != all_labels:
+            missing[key] = sorted(all_labels - labels)
+    return missing

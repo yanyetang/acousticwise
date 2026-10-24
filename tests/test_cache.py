@@ -1,11 +1,11 @@
 import csv
 import json
-from dataclasses import asdict
+from dataclasses import asdict, replace
 
 import numpy as np
 import pytest
 
-from acousticwise.audio.cache import CacheSettings, build_cache
+from acousticwise.audio.cache import CacheSettings, build_cache, load_cache
 from acousticwise.audio.features import log_mel
 from acousticwise.data.dataset import Recording
 from tests.conftest import tone
@@ -129,3 +129,18 @@ def test_padded_clips_are_flagged_in_index_and_counted_in_meta(write_wav, tmp_pa
 
     meta = json.loads((out / "meta.json").read_text())
     assert meta["padded_count"] == 1
+
+
+def test_loading_with_changed_settings_fails_and_names_the_fields(write_wav, tmp_path):
+    recordings = [make_recording(write_wav, "cargo", "a", tone(5.0, 32000))]
+    out = tmp_path / "cache"
+    build_cache(recordings, out, SETTINGS)
+
+    assert load_cache(out, SETTINGS).shape == (1, 64, 313)
+
+    changed = replace(SETTINGS, n_mels=128, hop_length=256)
+    with pytest.raises(ValueError) as err:
+        load_cache(out, changed)
+    assert "n_mels" in str(err.value)
+    assert "hop_length" in str(err.value)
+    assert "n_fft" not in str(err.value)

@@ -74,3 +74,8 @@ def build_cache(
     }
     with open(out_dir / "meta.json", "w") as f:
         json.dump(meta, f, indent=2)
+
+
+def load_cache(cache_dir: Path, settings: CacheSettings) -> np.ndarray:
+    """Open logmel.npy memory-mapped; refuse a cache built with other settings."""
+    raise NotImplementedError

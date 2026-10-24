@@ -78,6 +78,14 @@ Clips per vessel in fold 1 train (min, median, max): cargo 1, 1, 2; pleasurecraf
 
 Mean power relative to background: every ship class is 6 to 18 dB above background in the 1-4, 4-8 and 8-16 kHz bands, except pilotvessel (1.2 to 8.2 dB) and sailing (5.6 to 6.3 dB). In the 8-16 kHz band, cargo, dredger, fishing, other, passengership, tanker and tug are 13 to 18 dB above background, which is why the project keeps the native 32 kHz rate. At 0-1 kHz, pilotvessel (-10.6 dB), sailing (-6.8 dB) and rescue (-2.4 dB) are below background.
 
+### Split manifest
+
+`scripts/build_manifest.py` turns the official fold CSVs into `artifacts/splits.json` (clip ids and groups, about 28 MB, not committed) and checks every fold for shared clips or groups between splits. Built on 2026-10-24 from the CSVs exported by `notebooks/metadata_export/`, it passes the check and has SHA-256:
+
+```
+84591f54320f34d6872f4b5de769869ba72eada9d8677fa98b37bac8e4916a18  artifacts/splits.json
+```
+
 ### How the data was handled
 
 The raw bundle was uploaded to a private Kaggle dataset (`yanyetang/uniqueship-12-class-5-hours`) and extracted in a Kaggle notebook, because of limited local disk. Features are cached on Kaggle and only the cache and the split manifest come back to the laptop (see the technical design, section 12).

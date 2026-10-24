@@ -91,13 +91,13 @@ Windows are cut **after** the split is made, so a recording's windows can only f
 
 - UniqueShip ships its own five folds (grouped by MMSI; background by day). `splits.py` reads those CSVs and converts them to the manifest below. It does **not** re-split. The dataset's grouping is the leakage guarantee, and the test re-verifies it.
 - For a dataset without official folds (ShipsEar, P2), `splits.py` offers scikit-learn `StratifiedGroupKFold` on `Recording.group`, repeated over seeds, and fails loudly with class and counts if a class has too few groups for every partition.
-- Manifest: `artifacts/splits.json` stores clip ids and groups per fold and split, the fold number, and the source (official CSV or computed, with seed). It holds ids only, no audio, so it can be committed (D1). Training and evaluation load it.
+- Manifest: `artifacts/splits.json` stores clip ids and groups per fold and split, the fold number, and the source (official CSV or computed, with seed). It holds ids only, no audio. At about 28 MB it is not committed: `scripts/build_manifest.py` rebuilds it from the official CSVs, checks it for leakage and prints its SHA-256, which `DATA.md` records (D1). Training and evaluation load it.
 - **Leakage tests, run on every fold of the real manifest and on a synthetic fixture:** (1) the train/val/test id sets are disjoint; (2) the group sets are disjoint, so zero shared MMSI and zero shared background days; (3) no window's `recording_id` appears in more than one split. On 2026-10-09 the real bundle gave zero overlap for all of these.
 - Headline results are the mean and spread across the five folds. The single-model artifact in the app uses one named fold (set in config).
 
 ## 5. Models, features and artifacts (M1, M2, M6)
 
-- **Baseline:** MFCC summary features into a scikit-learn pipeline (scaler + classifier; SVM or random forest, chosen on validation).
+- **Baseline:** MFCC summary features (each clip's log-mel shifted by its normalization offset, then 20 MFCC means and stds) into a scikit-learn pipeline: `StandardScaler`, then an RBF SVM wrapped in `CalibratedClassifierCV(ensemble=False)` for per-class probabilities, or a random forest. `baseline.classifier` in config picks one; R1 chooses on validation.
 - **CNN:** a compact stack of 3–4 conv blocks (conv, batch norm, ReLU, pool), then a time-combining step chosen in config: average pooling over time (CNN) or a bidirectional LSTM over the time frames (CRNN), then a linear head. Class-weighted cross-entropy (P1). Model selection on validation macro-F1.
 - **Device:** `train.py` picks cuda, then mps, then cpu, so the same code runs on Kaggle and on the author's Apple-silicon laptop.
 - **Seeds:** one config seed controls Python, NumPy and PyTorch RNGs; deterministic algorithms are enabled where practical. The reproducibility gate has two tiers (PRD section 3): tests plus a fixture smoke run for anyone, and a cache-based retrain for the author within ±1 point macro-F1 (baseline) or ±2 (CNN).
@@ -111,13 +111,15 @@ Windows are cut **after** the split is made, so a recording's windows can only f
 Each trained model is saved as a directory:
 
 ```
-artifacts/<run_id>/
+artifacts/runs/<run_id>/       # e.g. baseline_fold1_svm_20261024-142300
   model.pt | model.joblib
-  config.json        # full resolved config, seed, fold, library versions
+  config.json        # full resolved config, fold, library versions
   labels.json        # ordered class names
-  splits.json        # copy of the manifest used
-  metrics.json       # val + test results
+  splits.json        # the trained fold's split from the manifest (not committed)
+  metrics.json       # validation results; evaluate.py adds the test results
 ```
+
+`uv run python -m acousticwise.train --fold N` trains the baseline and writes a run directory. Training reads only the fold's train and validation clips; the test split is first touched by `evaluate.py`, after the settings are chosen.
 
 `Predictor.load(run_dir)` reads `config.json` so inference reproduces the exact preprocessing used in training.
 

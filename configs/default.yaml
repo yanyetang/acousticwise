@@ -8,6 +8,7 @@ data:
   cache_dir: data/cache              # downloaded feature caches: sr32000/, sr16000/
   splits_path: artifacts/splits.json
   app_fold: 1                        # the fold whose model ships in the app
+  runs_dir: artifacts/runs           # one folder per trained model
 
 audio:
   sample_rate: 32000                 # native rate; Nyquist 16 kHz (ticket 03)
@@ -27,6 +28,9 @@ validation:                          # set from the dataset report (docs/dataset
   max_file_mb: 200                   # Streamlit's default upload cap
   max_seconds: 300                   # 5 minutes = 60 windows at a 5 s window
   silence_rms: 1.0e-4                # -80 dBFS; the quietest dataset clip is -51 dBFS
+
+baseline:
+  classifier: svm                    # svm | random_forest, chosen on validation (R1)
 
 evaluation:
   nine_class_subset:                 # background plus classes with >= 50 training vessels in every fold

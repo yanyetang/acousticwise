@@ -78,4 +78,16 @@ def build_cache(
 
 def load_cache(cache_dir: Path, settings: CacheSettings) -> np.ndarray:
     """Open logmel.npy memory-mapped; refuse a cache built with other settings."""
-    raise NotImplementedError
+    with open(cache_dir / "meta.json") as f:
+        meta = json.load(f)
+    saved, current = meta["settings"], asdict(settings)
+    diffs = [
+        f"{name}: cache {saved.get(name)}, config {value}"
+        for name, value in current.items()
+        if saved.get(name) != value
+    ]
+    if diffs:
+        raise ValueError(
+            f"Cache settings differ from the config: {'; '.join(diffs)}. Rebuild the cache."
+        )
+    return np.load(cache_dir / "logmel.npy", mmap_mode="r")

@@ -102,3 +102,11 @@ def test_train_baseline_records_which_manifest_it_used(baseline_inputs, tmp_path
     manifest_bytes = (tmp_path / "splits.json").read_bytes()
     saved = json.loads((tmp_path / "run" / "config.json").read_text())
     assert saved["manifest_sha256"] == hashlib.sha256(manifest_bytes).hexdigest()
+
+
+def test_train_baseline_refuses_an_unknown_normalization(baseline_inputs, tmp_path):
+    cfg, _ = baseline_inputs
+    cfg["audio"]["normalization"] = "rsm"  # a typo for rms
+
+    with pytest.raises(ValueError, match="Unknown normalization 'rsm'"):
+        train_baseline(cfg, fold=1, run_dir=tmp_path / "run")

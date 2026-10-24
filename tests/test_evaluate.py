@@ -1,0 +1,18 @@
+import pytest
+
+from acousticwise.evaluate import clip_scores
+
+
+def test_clip_scores_gives_the_headline_and_all_class_macro_f1():
+    # Per class F1: cargo 0.5 (P 1/2, R 1/2), tug 0.8 (P 2/3, R 1), dredger 2/3 (P 1, R 1/2).
+    y_true = ["cargo", "cargo", "tug", "tug", "dredger", "dredger"]
+    y_pred = ["cargo", "tug", "tug", "tug", "dredger", "cargo"]
+
+    scores = clip_scores(
+        y_true, y_pred, classes=["cargo", "dredger", "tug"], headline=["cargo", "tug"]
+    )
+
+    assert scores["accuracy"] == pytest.approx(4 / 6)
+    # Headline: averaged over the headline classes only, on all clips (dredger clips included).
+    assert scores["macro_f1_headline"] == pytest.approx((0.5 + 0.8) / 2)
+    assert scores["macro_f1_all"] == pytest.approx((0.5 + 0.8 + 2 / 3) / 3)

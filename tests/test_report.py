@@ -51,11 +51,11 @@ def test_format_report_writes_one_markdown_table_per_fold():
     ]
     # Rows keep their order; hours have 2 decimals, the shortest clip 1 decimal.
     expected = "\n".join(
-        ["## Fold 1", "", *header,
+        ["### Fold 1", "", *header,
          "| train | cargo | 3600 | 40 | 5.00 | 1 | 4.5 |",
          "| test | tug | 720 | 9 | 1.00 | 0 | 5.0 |",
          "",
-         "## Fold 2", "", *header,
+         "### Fold 2", "", *header,
          "| train | cargo | 2880 | 32 | 4.00 | 0 | 5.0 |",
          ""]
     )  # fmt: skip

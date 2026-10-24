@@ -29,7 +29,7 @@ def generated_section(bundle: Path, window_seconds: float) -> str:
         "Vessels or days: distinct vessels (MMSI), or distinct days for background.",
         f"Short clips: shorter than the {window_seconds:g} s window, so padded before features.",
         "",
-        format_report(rows).replace("## Fold", "### Fold"),
+        format_report(rows),
         "## Classes with no clips",
         "",
         "These splits cannot score the listed classes.",

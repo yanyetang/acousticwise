@@ -1,0 +1,40 @@
+package: /kaggle/input/datasets/yanyetang/acousticwise-src
+script:  /kaggle/input/datasets/yanyetang/acousticwise-src/scripts/cache_features.py
+config:  /kaggle/input/datasets/yanyetang/acousticwise-src/configs/default.yaml
+extracted in 687 s
+bundle: /tmp/stage/allclass_5hours
+26G	/tmp/stage
+
+43208 clips in /tmp/stage/allclass_5hours
+/kaggle/working/cache/sr32000: built in 963 s with CacheSettings(sample_rate=32000, window_seconds=5.0, min_seconds=4.0, n_fft=2048, hop_length=512, n_mels=64, cache_format=1)
+/kaggle/working/cache/sr16000: built in 1080 s with CacheSettings(sample_rate=16000, window_seconds=5.0, min_seconds=4.0, n_fft=1024, hop_length=256, n_mels=64, cache_format=1)
+43208 clips in /tmp/stage/allclass_5hours
+/kaggle/working/cache/sr32000: built in 963 s with CacheSettings(sample_rate=32000, window_seconds=5.0, min_seconds=4.0, n_fft=2048, hop_length=512, n_mels=64, cache_format=1)
+/kaggle/working/cache/sr16000: built in 1080 s with CacheSettings(sample_rate=16000, window_seconds=5.0, min_seconds=4.0, n_fft=1024, hop_length=256, n_mels=64, cache_format=1)
+both caches built in 2053 s
+== sr16000: logmel (43208, 64, 313) float16, index 43208 rows
+settings: {'sample_rate': 16000, 'window_seconds': 5.0, 'min_seconds': 4.0, 'n_fft': 1024, 'hop_length': 256, 'n_mels': 64, 'cache_format': 1}
+padded: 12 of 43208 = 0.03%
+failed: 0
+clips per class: {'background': 3600, 'cargo': 3601, 'dredger': 3601, 'fishing': 3601, 'other': 3601, 'passengership': 3600, 'pilotvessel': 3601, 'pleasurecraft': 3600, 'rescue': 3600, 'sailing': 3601, 'tanker': 3601, 'tug': 3601}
+peak_db -48.4 to -0.6, rms_db -51.0 to -16.3
+  index.csv: 0.00 GB
+  logmel.npy: 1.73 GB
+  meta.json: 0.00 GB
+
+== sr32000: logmel (43208, 64, 313) float16, index 43208 rows
+settings: {'sample_rate': 32000, 'window_seconds': 5.0, 'min_seconds': 4.0, 'n_fft': 2048, 'hop_length': 512, 'n_mels': 64, 'cache_format': 1}
+padded: 13 of 43208 = 0.03%
+failed: 0
+clips per class: {'background': 3600, 'cargo': 3601, 'dredger': 3601, 'fishing': 3601, 'other': 3601, 'passengership': 3600, 'pilotvessel': 3601, 'pleasurecraft': 3600, 'rescue': 3600, 'sailing': 3601, 'tanker': 3601, 'tug': 3601}
+peak_db -48.4 to -0.0, rms_db -51.0 to -16.3
+  index.csv: 0.00 GB
+  logmel.npy: 1.73 GB
+  meta.json: 0.00 GB
+
+578ccea942a849c3a6d7653d8d018d4b0d08b84ebbf21ba9e9e2a581b963ef18  sr16000/index.csv
+df9a2a74734ace7ad02649a22c830a5b5334c3e5154c07ced8d3803c8c2d8be2  sr16000/logmel.npy
+e3f2eca3a834923be14b6774b36d69402d3e7ddda89b22314e253598dfa7f7e1  sr16000/meta.json
+2e11d4d2d1b6a704185fb4599a5678c71339c95391b01dbe1d531010b62bd806  sr32000/index.csv
+dcc38a8e2ea4996143e4789609e0b9eb3797ee4f0920be9094150e5fab8a9515  sr32000/logmel.npy
+bb2e25a0e6bf24a0156a23a2859f74f29a0843ca68a5edfe66b2dc578a0b53e4  sr32000/meta.json

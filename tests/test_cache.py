@@ -91,3 +91,20 @@ def test_unreadable_clip_is_skipped_and_listed_in_meta(write_wav, tmp_path):
     [failed] = meta["failed"]
     assert failed["clip_id"] == "cargo/b"
     assert failed["reason"]
+
+
+def test_too_many_failures_stop_the_build_before_writing(write_wav, tmp_path):
+    # 1 failure in 2 clips is 50%, far above the default limit of 0.1%: that many
+    # unreadable files points to a bug or a wrong path, not to a few bad recordings.
+    broken = tmp_path / "cargo_b.wav"
+    broken.write_bytes(b"not a wav file")
+    recordings = [
+        make_recording(write_wav, "cargo", "a", tone(5.0, 32000)),
+        Recording(id="cargo/b", path=broken, label="cargo", group="mmsi:1"),
+    ]
+    out = tmp_path / "cache"
+
+    with pytest.raises(RuntimeError, match="1 of 2"):
+        build_cache(recordings, out, SETTINGS)
+
+    assert not (out / "logmel.npy").exists()

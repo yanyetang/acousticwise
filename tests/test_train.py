@@ -49,6 +49,7 @@ def test_train_baseline_validation_leaves_out_classes_with_no_clips(baseline_inp
     # Scored like the test split, so the two are comparable: tug is listed, not counted as 0.
     validation = json.loads((tmp_path / "run" / "metrics.json").read_text())["validation"]
     assert validation["macro_f1_all"] == 1.0
+    assert validation["macro_f1_headline"] == 1.0  # tug is a headline class here, but unscored
     assert validation["classes_without_clips"] == ["tug"]
 
 

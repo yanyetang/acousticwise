@@ -138,8 +138,9 @@ def evaluate_runs(run_dirs: list[Path], summary_path: Path) -> None:
         rows.append({"run": run_dir.name, "fold": fold, **scores})
 
     # The details (per class, misclassified clips) stay in each run's own metrics.json.
-    summary = {
-        "runs": rows,
-        "across_folds": fold_summary([{s: row[s] for s in SUMMARY_SCORES} for row in rows]),
-    }
+    summary: dict[str, object] = {"runs": rows}
+    if len(rows) > 1:  # one run has no spread
+        summary["across_folds"] = fold_summary(
+            [{s: row[s] for s in SUMMARY_SCORES} for row in rows]
+        )
     summary_path.write_text(json.dumps(summary, indent=2) + "\n")

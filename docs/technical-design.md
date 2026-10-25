@@ -116,10 +116,10 @@ artifacts/runs/<run_id>/       # e.g. baseline_fold1_svm_20261024-142300
   config.json        # full resolved config, fold, library versions
   labels.json        # ordered class names
   splits.json        # the trained fold's split from the manifest (not committed)
-  metrics.json       # validation results; evaluate.py adds the test results
+  metrics.json       # "validation" from training; evaluate.py adds "test"
 ```
 
-`uv run python -m acousticwise.train --fold N` trains the baseline and writes a run directory. Training reads only the fold's train and validation clips; the test split is first touched by `evaluate.py`, after the settings are chosen.
+`uv run python -m acousticwise.train --fold N` trains the baseline and writes a run directory. Training reads only the fold's train and validation clips, and scores validation the same way `evaluate.py` scores test (section 8), so the two are comparable. The test split is first touched by `evaluate.py`, after the settings are chosen. Both load features through `load_features` (`audio/cache.py`), so they cannot read the cache differently.
 
 `Predictor.load(run_dir)` reads `config.json` so inference reproduces the exact preprocessing used in training.
 
@@ -161,14 +161,15 @@ Single Streamlit page: file uploader, "Classify" button, result card (predicted 
 
 ## 8. Evaluation (M4, M5)
 
-`evaluate.py` computes, from a run directory and its manifest:
-- accuracy, the 9-class macro-F1 (headline) and the 12-class macro-F1, per-class precision/recall/F1, and the confusion matrix, on the test split. The 9-class subset is a config list (every class with at least 50 distinct training vessels in every fold, plus background: dredger, pilotvessel and rescue are out); its score is F1 averaged over those 9 labels on the full test set from the same 12-class model (scikit-learn `labels=`). The 12-class score averages over the classes with test clips in that fold, and the classes without any are recorded beside it;
-- the number of distinct vessels behind each class in the train and test splits, printed beside each per-class score;
-- per-clip results; beside each class, per fold, the number of test vessels and the share of test clips from the largest test vessel (background grouped by day). A vessel-vote table (mean softmax over a vessel's clips, P1) is added later;
-- mean and spread across the five folds, for both models;
-- a baseline vs CNN vs CRNN comparison table written to `metrics.json` and rendered in the README.
+`uv run python -m acousticwise.evaluate RUN_DIR [RUN_DIR ...] [--out FILE]` scores each run on its own fold's test split, using the run's `config.json`, `labels.json` and `splits.json`, and adds a `"test"` section to its `metrics.json`:
+- accuracy, the 9-class macro-F1 (headline) and the 12-class macro-F1. The 9-class subset is a config list (every class with at least 50 distinct training vessels in every fold, plus background: dredger, pilotvessel and rescue are out); its score is F1 averaged over those 9 labels on the full test set from the same 12-class model (scikit-learn `labels=`). Both averages use only the classes with clips in the split; the classes without any (for example dredger in fold 1's test) are listed in `classes_without_clips` instead of counting as 0;
+- per class: precision, recall, F1 and clips, beside the number of distinct train and test vessels and the share of test clips from the largest test vessel (background grouped by day);
+- the confusion matrix (rows true, columns predicted) with its class order;
+- the misclassified clips with their ids and groups, so the P1 error analysis can pull spectrograms.
 
-Misclassified clips are listed with their ids and groups so the P1 error analysis can pull spectrograms.
+It then writes one summary (default `artifacts/summary.json`): a row per run with its fold and the three scalar scores, and, for two or more runs, their mean and sample standard deviation (`across_folds`). One run has no spread, so it gets no `across_folds`.
+
+Added later: a vessel-vote table (mean softmax over a vessel's clips, P1), and the baseline vs CNN vs CRNN comparison table rendered in the README.
 
 ## 9. Testing (E3)
 

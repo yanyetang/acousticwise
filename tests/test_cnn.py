@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from acousticwise.models.cnn import ConvNet, set_seed, train_epoch
+from acousticwise.models.cnn import ConvNet, pick_device, set_seed, train_epoch
 
 
 @pytest.mark.parametrize("time_pooling", ["mean", "lstm"])  # CNN, CRNN
@@ -56,3 +56,19 @@ def test_the_same_seed_gives_the_same_losses(time_pooling):
     assert losses_for_seed(7, time_pooling) == losses_for_seed(7, time_pooling)
     # And the seed matters: another one starts from other weights.
     assert losses_for_seed(7, time_pooling) != losses_for_seed(8, time_pooling)
+
+
+@pytest.mark.parametrize(
+    ("cuda", "mps", "expected"),
+    [
+        (True, True, "cuda"),  # Kaggle's GPU first
+        (False, True, "mps"),  # then an Apple-silicon GPU
+        (False, False, "cpu"),  # then the CPU, which always works
+    ],
+)
+def test_pick_device_prefers_cuda_then_mps_then_cpu(monkeypatch, cuda, mps, expected):
+    # Pretend which GPUs exist, so the test gives the same answer on any machine.
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: cuda)
+    monkeypatch.setattr(torch.backends.mps, "is_available", lambda: mps)
+
+    assert pick_device() == torch.device(expected)

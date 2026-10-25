@@ -12,6 +12,7 @@ dependencies = [
     "scikit-learn>=1.9.1",
     "scipy>=1.18.1",
     "soundfile>=0.14.0",
+    "torch>=2.14.1",
 ]
 
 [dependency-groups]
@@ -38,3 +39,7 @@ extend-exclude = ["notebooks", "docs"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.isort]
+# Known up front, so tests can import a module before its file exists (RED commits).
+known-first-party = ["acousticwise"]

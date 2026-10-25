@@ -1,5 +1,6 @@
 """Score a trained run on its fold's test split (technical design, section 8)."""
 
+import statistics
 from collections import Counter, defaultdict
 
 from sklearn.metrics import accuracy_score, f1_score
@@ -38,3 +39,13 @@ def vessel_counts(labels: list[str], groups: list[str]) -> dict[str, dict]:
             "largest_vessel_share": max(clips_per_vessel.values()) / len(clip_groups),
         }
     return counts
+
+
+def fold_summary(folds: list[dict[str, float]]) -> dict[str, dict[str, float]]:
+    """Per score: the mean and the sample standard deviation across folds."""
+    summary = {}
+    for score in folds[0]:
+        values = [fold[score] for fold in folds]
+        # stdev divides by n - 1: the folds are a small sample of the possible vessel splits.
+        summary[score] = {"mean": statistics.mean(values), "std": statistics.stdev(values)}
+    return summary

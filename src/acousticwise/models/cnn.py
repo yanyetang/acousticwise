@@ -10,6 +10,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+from acousticwise.audio.cache import IndexEntry
+
 TIME_POOLING = ("mean", "lstm")
 
 
@@ -69,18 +71,45 @@ def train_epoch(
     batch_size: int,
     generator: torch.Generator,
 ) -> float:
-    """One pass over the clips in a shuffled order; return the mean loss per clip."""
+    """One pass over the clips in a shuffled order; return the mean loss per clip.
+
+    The clips can stay on the cpu: each batch is moved to the model's device.
+    """
     model.train()
+    device = next(model.parameters()).device
     order = torch.randperm(len(x), generator=generator)  # a new shuffle every epoch
     total_loss = 0.0
     for start in range(0, len(order), batch_size):
         batch = order[start : start + batch_size]  # the last batch may be shorter
-        loss = F.cross_entropy(model(x[batch]), y[batch])
+        loss = F.cross_entropy(model(x[batch].to(device)), y[batch].to(device))
         optimizer.zero_grad()  # gradients add up unless cleared
         loss.backward()
         optimizer.step()
         total_loss += loss.item() * len(batch)
     return total_loss / len(order)
+
+
+@torch.no_grad()  # no gradients needed to predict: faster, less memory
+def predict_classes(model: nn.Module, x: torch.Tensor, batch_size: int) -> torch.Tensor:
+    """The index of the highest-scoring class for each clip, on the cpu."""
+    model.eval()  # dropout off, batch norm uses its saved averages
+    device = next(model.parameters()).device
+    batches = [
+        model(x[i : i + batch_size].to(device)).argmax(dim=1).cpu()
+        for i in range(0, len(x), batch_size)
+    ]
+    return torch.cat(batches)
+
+
+def split_logmel(
+    logmel: np.ndarray, index: dict[str, IndexEntry], entries: list[dict]
+) -> tuple[np.ndarray, list[str]]:
+    """Log-mels (clips, 64, 313) as float32, each shifted by its normalization offset, and
+    labels, for one split's manifest entries in their order."""
+    rows, labels, offsets = zip(*(index[e["id"]] for e in entries), strict=True)
+    x = logmel[list(rows)].astype(np.float32)
+    x += np.array(offsets, dtype=np.float32)[:, None, None]
+    return x, list(labels)
 
 
 def set_seed(seed: int) -> None:

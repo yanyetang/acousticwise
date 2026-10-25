@@ -32,6 +32,13 @@ validation:                          # set from the dataset report (docs/dataset
 baseline:
   classifier: random_forest          # svm | random_forest; random_forest won on validation (R1)
 
+cnn:
+  time_pooling: mean                 # mean (CNN) | lstm (CRNN)
+  epochs: 25                         # the weights of the best validation epoch are kept
+  batch_size: 64
+  lr: 1.0e-3                         # AdamW, with a cosine decay over the epochs
+  weight_decay: 1.0e-4
+
 evaluation:
   nine_class_subset:                 # background plus classes with >= 50 training vessels in every fold
     - background

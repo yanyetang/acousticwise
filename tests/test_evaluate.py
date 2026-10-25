@@ -126,7 +126,6 @@ def test_evaluate_run_adds_the_test_results_to_the_run_metrics(baseline_inputs, 
 
 def test_evaluate_runs_writes_each_fold_and_the_mean_and_spread(baseline_inputs, tmp_path):
     cfg, manifest = baseline_inputs
-    cfg["evaluation"]["nine_class_subset"] = ["cargo", "tug"]  # the fixture's only classes
     # A second fold with validation and test swapped, so its test clips are all easy.
     fold_1 = manifest["folds"]["1"]
     manifest["folds"]["2"] = {
@@ -159,7 +158,6 @@ def test_evaluate_runs_writes_each_fold_and_the_mean_and_spread(baseline_inputs,
 
 def test_evaluate_runs_on_one_run_writes_no_spread(baseline_inputs, tmp_path):
     cfg, _ = baseline_inputs
-    cfg["evaluation"]["nine_class_subset"] = ["cargo", "tug"]
     train_baseline(cfg, fold=1, run_dir=tmp_path / "fold1")
 
     evaluate_runs([tmp_path / "fold1"], tmp_path / "summary.json")

@@ -82,6 +82,7 @@ def baseline_inputs(tmp_path, write_wav):
         cfg = yaml.safe_load(f)
     cfg["data"]["cache_dir"] = str(tmp_path / "cache")
     cfg["data"]["splits_path"] = str(tmp_path / "splits.json")
+    cfg["evaluation"]["nine_class_subset"] = list(FREQS)  # the headline: the fixture's classes
 
     recordings, entries = [], {"train": [], "validation": [], "test": []}
     for label, freq in FREQS.items():

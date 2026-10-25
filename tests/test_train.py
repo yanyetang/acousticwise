@@ -5,6 +5,7 @@ import joblib
 import numpy as np
 import pytest
 
+from acousticwise.data.splits import save_manifest
 from acousticwise.train import train_baseline
 
 
@@ -30,8 +31,25 @@ def test_train_baseline_writes_a_complete_run_directory(baseline_inputs, tmp_pat
     metrics = json.loads((run_dir / "metrics.json").read_text())
     assert set(metrics) == {"validation"}
     assert metrics["validation"]["accuracy"] == 1.0
-    assert metrics["validation"]["macro_f1"] == 1.0
+    assert metrics["validation"]["macro_f1_headline"] == 1.0
+    assert metrics["validation"]["macro_f1_all"] == 1.0
+    assert metrics["validation"]["classes_without_clips"] == []
     assert metrics["validation"]["clips"] == 4
+
+
+def test_train_baseline_validation_leaves_out_classes_with_no_clips(baseline_inputs, tmp_path):
+    cfg, manifest = baseline_inputs
+    # Like pilotvessel, which is in no validation split: here tug has no validation clips.
+    fold = manifest["folds"]["1"]
+    fold["validation"] = [e for e in fold["validation"] if e["id"].startswith("cargo/")]
+    save_manifest(manifest, tmp_path / "splits.json")
+
+    train_baseline(cfg, fold=1, run_dir=tmp_path / "run")
+
+    # Scored like the test split, so the two are comparable: tug is listed, not counted as 0.
+    validation = json.loads((tmp_path / "run" / "metrics.json").read_text())["validation"]
+    assert validation["macro_f1_all"] == 1.0
+    assert validation["classes_without_clips"] == ["tug"]
 
 
 @pytest.mark.parametrize("classifier", ["svm", "random_forest"])

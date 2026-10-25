@@ -10,7 +10,7 @@ from acousticwise.evaluate import (
     fold_summary,
     vessel_counts,
 )
-from acousticwise.train import train_baseline
+from acousticwise.train import train_baseline, train_cnn
 
 
 def test_clip_scores_gives_the_headline_and_all_class_macro_f1():
@@ -166,3 +166,22 @@ def test_evaluate_runs_on_one_run_writes_no_spread(baseline_inputs, tmp_path):
     summary = json.loads((tmp_path / "summary.json").read_text())
     assert [r["run"] for r in summary["runs"]] == ["fold1"]
     assert "across_folds" not in summary
+
+
+@pytest.mark.parametrize("time_pooling", ["mean", "lstm"])  # CNN, CRNN
+def test_evaluate_run_scores_a_cnn_run(baseline_inputs, tmp_path, time_pooling):
+    cfg, _ = baseline_inputs
+    cfg["cnn"].update(time_pooling=time_pooling, epochs=8, batch_size=4)
+    run_dir = tmp_path / "run"
+    train_cnn(cfg, fold=1, run_dir=run_dir)
+
+    evaluate_run(run_dir)
+
+    # Same test clips as the baseline test: the tones are easy, so only tug/9, a cargo tone,
+    # is wrong. Getting this right needs the run's own input scaling, not just its weights.
+    test = json.loads((run_dir / "metrics.json").read_text())["test"]
+    assert test["clips"] == 4
+    assert test["accuracy"] == pytest.approx(3 / 4)
+    assert test["misclassified"] == [
+        {"id": "tug/9", "group": "mmsi:tug9", "label": "tug", "predicted": "cargo"}
+    ]

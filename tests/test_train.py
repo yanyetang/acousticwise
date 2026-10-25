@@ -4,9 +4,11 @@ import json
 import joblib
 import numpy as np
 import pytest
+import torch
 
 from acousticwise.data.splits import save_manifest
-from acousticwise.train import train_baseline
+from acousticwise.models.cnn import ConvNet
+from acousticwise.train import train_baseline, train_cnn
 
 
 def test_train_baseline_writes_a_complete_run_directory(baseline_inputs, tmp_path):
@@ -96,3 +98,36 @@ def test_train_baseline_refuses_an_unknown_normalization(baseline_inputs, tmp_pa
 
     with pytest.raises(ValueError, match="Unknown normalization 'rsm'"):
         train_baseline(cfg, fold=1, run_dir=tmp_path / "run")
+
+
+@pytest.mark.parametrize("time_pooling", ["mean", "lstm"])  # CNN, CRNN
+def test_train_cnn_writes_a_complete_run_directory(baseline_inputs, tmp_path, time_pooling):
+    cfg, manifest = baseline_inputs
+    cfg["cnn"].update(time_pooling=time_pooling, epochs=2, batch_size=4)  # tiny, for speed
+    run_dir = tmp_path / "run"
+
+    train_cnn(cfg, fold=1, run_dir=run_dir)
+
+    # The weights load back into the same network.
+    model = ConvNet(n_classes=2, time_pooling=time_pooling)
+    model.load_state_dict(torch.load(run_dir / "model.pt"))
+    assert json.loads((run_dir / "labels.json").read_text()) == ["cargo", "tug"]
+    assert json.loads((run_dir / "splits.json").read_text()) == manifest["folds"]["1"]
+
+    saved = json.loads((run_dir / "config.json").read_text())
+    assert saved["config"] == cfg
+    assert saved["fold"] == 1
+    assert {"python", "numpy", "torch"} <= set(saved["versions"])
+    # The training clips' level, so evaluation and the app scale inputs the same way.
+    assert set(saved["input_scaling"]) == {"mean", "std"}
+    assert saved["input_scaling"]["std"] > 0
+
+    # Validation scored like the baseline's, for the kept epoch, plus the training curve.
+    validation = json.loads((run_dir / "metrics.json").read_text())["validation"]
+    assert {"accuracy", "macro_f1_headline", "macro_f1_all", "classes_without_clips"} <= set(
+        validation
+    )
+    assert validation["clips"] == 4
+    assert validation["best_epoch"] in (1, 2)
+    assert [h["epoch"] for h in validation["history"]] == [1, 2]
+    assert {"loss", "macro_f1_headline"} <= set(validation["history"][0])

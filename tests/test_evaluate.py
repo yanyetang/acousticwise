@@ -1,6 +1,9 @@
+import json
+
 import pytest
 
-from acousticwise.evaluate import clip_scores, fold_summary, vessel_counts
+from acousticwise.evaluate import clip_scores, evaluate_run, fold_summary, vessel_counts
+from acousticwise.train import train_baseline
 
 
 def test_clip_scores_gives_the_headline_and_all_class_macro_f1():
@@ -71,3 +74,44 @@ def test_fold_summary_gives_mean_and_spread_over_five_folds():
         "mean": pytest.approx(0.30),
         "std": pytest.approx(0.0316228, abs=1e-6),
     }
+
+
+def test_evaluate_run_adds_the_test_results_to_the_run_metrics(baseline_inputs, tmp_path):
+    cfg, _ = baseline_inputs
+    cfg["evaluation"]["nine_class_subset"] = ["cargo"]  # a headline smaller than all classes
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+    validation = json.loads((run_dir / "metrics.json").read_text())["validation"]
+
+    evaluate_run(run_dir)
+
+    metrics = json.loads((run_dir / "metrics.json").read_text())
+    assert metrics["validation"] == validation  # kept as training wrote it
+    test = metrics["test"]
+
+    # Test clips cargo/8, cargo/9, tug/8, and tug/9, which sounds like cargo: 3 of 4 right.
+    # cargo F1 0.8 (P 2/3, R 1), tug F1 2/3 (P 1, R 1/2).
+    assert test["clips"] == 4
+    assert test["accuracy"] == pytest.approx(3 / 4)
+    assert test["macro_f1_headline"] == pytest.approx(0.8)
+    assert test["macro_f1_all"] == pytest.approx((0.8 + 2 / 3) / 2)
+    assert test["classes_without_clips"] == []
+
+    # Each class's scores beside the vessels behind them (6 train vessels, 2 test vessels).
+    assert test["per_class"]["tug"] == {
+        "precision": pytest.approx(1.0),
+        "recall": pytest.approx(0.5),
+        "f1": pytest.approx(2 / 3),
+        "clips": 2,
+        "train_vessels": 6,
+        "test_vessels": 2,
+        "largest_vessel_share": 0.5,
+    }
+    assert test["per_class"]["cargo"]["precision"] == pytest.approx(2 / 3)
+
+    # Rows are the true class, columns the predicted class, both in labels.json order.
+    assert test["confusion_matrix"] == {"labels": ["cargo", "tug"], "matrix": [[2, 0], [1, 1]]}
+    # Listed with the vessel, so the error analysis can find the clip and its ship.
+    assert test["misclassified"] == [
+        {"id": "tug/9", "group": "mmsi:tug9", "label": "tug", "predicted": "cargo"}
+    ]

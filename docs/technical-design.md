@@ -98,7 +98,9 @@ Windows are cut **after** the split is made, so a recording's windows can only f
 ## 5. Models, features and artifacts (M1, M2, M6)
 
 - **Baseline:** MFCC summary features (each clip's log-mel shifted by its normalization offset, then 20 MFCC means and stds) into a scikit-learn pipeline: `StandardScaler`, then an RBF SVM wrapped in `CalibratedClassifierCV(ensemble=False)` for per-class probabilities, or a random forest. `baseline.classifier` in config picks one; R1 chose the random forest on validation (`docs/results.md`).
-- **CNN:** a compact stack of 3–4 conv blocks (conv, batch norm, ReLU, pool), then a time-combining step chosen in config: average pooling over time (CNN) or a bidirectional LSTM over the time frames (CRNN), then a linear head. Class-weighted cross-entropy (P1). Model selection on validation macro-F1.
+- **CNN:** `models/cnn.py`, the fold 1 spike's network: 4 conv blocks (3×3 conv, batch norm, ReLU, max pool; 32, 64, 128, 128 filters; the last two pool frequency only, leaving 78 time steps), the mean over the 4 remaining mel rows, then a time-combining step set by `cnn.time_pooling`: the mean over time (`mean`, the CNN, 242 k parameters) or a bidirectional LSTM with 64 units per direction whose two final states are joined (`lstm`, the CRNN, 341 k parameters). Then dropout 0.3 and a linear head.
+  - **Input:** each clip's log-mel plus its normalization offset (as for the baseline), then standardized with the mean and standard deviation of the fold's training clips. Those two numbers are saved in the run's `config.json` (`input_scaling`), so evaluation and inference scale inputs the same way.
+  - **Training:** cross-entropy, AdamW (`cnn.lr`, `cnn.weight_decay`) with a cosine learning-rate decay over `cnn.epochs`, batches of `cnn.batch_size`, shuffled each epoch by a generator seeded from the config seed. After every epoch the model is scored on validation with `clip_scores`; the weights from the epoch with the best validation headline macro-F1 are kept. Class-weighted cross-entropy is P1.
 - **Device:** `train.py` picks cuda, then mps, then cpu, so the same code runs on Kaggle and on the author's Apple-silicon laptop.
 - **Seeds:** one config seed controls Python, NumPy and PyTorch RNGs; deterministic algorithms are enabled where practical. The reproducibility gate has two tiers (PRD section 3): tests plus a fixture smoke run for anyone, and a cache-based retrain for the author within ±1 point macro-F1 (baseline) or ±2 (CNN).
 - **Feature cache (E5):** `scripts/cache_features.py` reads every clip from fold 1's train, validation and test CSVs (together, every clip once) and runs `audio/cache.py`, which uses the same preprocessing and feature code as inference (each clip appears in all five folds, so the cache is not per fold). Training reads the cache, so the 26 GB audio is only needed once. The cache is generated and never committed. One cache per sample rate (`cache/sr32000/`, `cache/sr16000/`, both built in the same run; at 16 kHz `n_fft` and hop are halved so the shape stays 64 × 313), each holding:
@@ -112,14 +114,14 @@ Each trained model is saved as a directory:
 
 ```
 artifacts/runs/<run_id>/       # e.g. baseline_fold1_svm_20261024-142300
-  model.pt | model.joblib
+  model.pt | model.joblib   # CNN weights (state dict, saved on the cpu) | baseline pipeline
   config.json        # full resolved config, fold, library versions
   labels.json        # ordered class names
   splits.json        # the trained fold's split from the manifest (not committed)
-  metrics.json       # "validation" from training; evaluate.py adds "test"
+  metrics.json       # "validation" from training (CNN: of the kept epoch, plus best_epoch and a per-epoch history); evaluate.py adds "test"
 ```
 
-`uv run python -m acousticwise.train --fold N` trains the baseline and writes a run directory. Training reads only the fold's train and validation clips, and scores validation the same way `evaluate.py` scores test (section 8), so the two are comparable. The test split is first touched by `evaluate.py`, after the settings are chosen. Both load features through `load_features` (`audio/cache.py`), so they cannot read the cache differently.
+`uv run python -m acousticwise.train --fold N [--model baseline|cnn]` trains the baseline or the CNN (the CRNN is the CNN with `cnn.time_pooling: lstm`) and writes a run directory. `evaluate.py` loads either kind of model from the run directory. Training reads only the fold's train and validation clips, and scores validation the same way `evaluate.py` scores test (section 8), so the two are comparable. The test split is first touched by `evaluate.py`, after the settings are chosen. Both load features through `load_features` (`audio/cache.py`), so they cannot read the cache differently.
 
 `Predictor.load(run_dir)` reads `config.json` so inference reproduces the exact preprocessing used in training.
 

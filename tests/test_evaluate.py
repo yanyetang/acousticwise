@@ -2,7 +2,14 @@ import json
 
 import pytest
 
-from acousticwise.evaluate import clip_scores, evaluate_run, fold_summary, vessel_counts
+from acousticwise.data.splits import save_manifest
+from acousticwise.evaluate import (
+    clip_scores,
+    evaluate_run,
+    evaluate_runs,
+    fold_summary,
+    vessel_counts,
+)
 from acousticwise.train import train_baseline
 
 
@@ -115,3 +122,35 @@ def test_evaluate_run_adds_the_test_results_to_the_run_metrics(baseline_inputs, 
     assert test["misclassified"] == [
         {"id": "tug/9", "group": "mmsi:tug9", "label": "tug", "predicted": "cargo"}
     ]
+
+
+def test_evaluate_runs_writes_each_fold_and_the_mean_and_spread(baseline_inputs, tmp_path):
+    cfg, manifest = baseline_inputs
+    # A second fold with validation and test swapped, so its test clips are all easy.
+    fold_1 = manifest["folds"]["1"]
+    manifest["folds"]["2"] = {
+        "train": fold_1["train"],
+        "validation": fold_1["test"],
+        "test": fold_1["validation"],
+    }
+    save_manifest(manifest, tmp_path / "splits.json")
+    run_dirs = [tmp_path / "fold1", tmp_path / "fold2"]
+    for fold, run_dir in enumerate(run_dirs, start=1):
+        train_baseline(cfg, fold=fold, run_dir=run_dir)
+
+    evaluate_runs(run_dirs, tmp_path / "summary.json")
+
+    summary = json.loads((tmp_path / "summary.json").read_text())
+    # One row per run: fold 1 gets 3 of 4 test clips right (test 5), fold 2 all 4.
+    assert [(r["run"], r["fold"], r["accuracy"]) for r in summary["runs"]] == [
+        ("fold1", 1, pytest.approx(0.75)),
+        ("fold2", 2, pytest.approx(1.0)),
+    ]
+    # Each run's own metrics.json also gets its full test results.
+    assert "test" in json.loads((run_dirs[1] / "metrics.json").read_text())
+    # Mean and spread of the scalar scores only; std of 0.75 and 1.0 is 0.125 * sqrt(2).
+    assert set(summary["across_folds"]) == {"accuracy", "macro_f1_headline", "macro_f1_all"}
+    assert summary["across_folds"]["accuracy"] == {
+        "mean": pytest.approx(0.875),
+        "std": pytest.approx(0.125 * 2**0.5),
+    }

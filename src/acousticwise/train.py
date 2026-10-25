@@ -7,7 +7,6 @@ Writes <data.runs_dir>/baseline_fold<N>_<classifier>_<time>/ (technical design, 
 """
 
 import argparse
-import csv
 import hashlib
 import json
 import platform
@@ -18,44 +17,32 @@ import joblib
 import numpy as np
 import sklearn
 import yaml
-from sklearn.metrics import accuracy_score, f1_score
 from sklearn.pipeline import Pipeline
 
-from acousticwise.audio.cache import load_cache, settings_for
+from acousticwise.audio.cache import load_features
 from acousticwise.data.splits import load_manifest
-from acousticwise.models.baseline import make_baseline, mfcc_features
-
-# One cache index entry: the clip's row in logmel.npy, its label and its offset in dB.
-IndexEntry = tuple[int, str, float]
-
-# The index.csv level each normalization method subtracts; "none" subtracts nothing.
-LEVEL_COLUMNS = {"peak": "peak_db", "rms": "rms_db", "none": None}
+from acousticwise.evaluate import clip_scores
+from acousticwise.models.baseline import make_baseline, split_features
 
 
 def train_baseline(cfg: dict, fold: int, run_dir: Path) -> None:
     """Train the baseline on one fold's training clips from the cache; write the run directory."""
-    # The cache holds every clip of every fold; load_cache refuses one built with other settings.
-    sample_rate = cfg["audio"]["sample_rate"]
-    cache_dir = Path(cfg["data"]["cache_dir"]) / f"sr{sample_rate}"
-    logmel = load_cache(cache_dir, settings_for(cfg, sample_rate))
-    index = _read_index(cache_dir, cfg["audio"]["normalization"])
+    # The cache holds every clip of every fold.
+    logmel, index = load_features(cfg)
 
     # The manifest says which clips are this fold's train and validation clips.
     manifest_path = Path(cfg["data"]["splits_path"])
     split = load_manifest(manifest_path)["folds"][str(fold)]
     n_mfcc = cfg["features"]["n_mfcc"]
-    x_train, y_train = _features(logmel, index, split["train"], n_mfcc)
-    x_val, y_val = _features(logmel, index, split["validation"], n_mfcc)
+    x_train, y_train = split_features(logmel, index, split["train"], n_mfcc)
+    x_val, y_val = split_features(logmel, index, split["validation"], n_mfcc)
 
     model = make_baseline(cfg["baseline"]["classifier"], cfg["seed"]).fit(x_train, y_train)
-    predicted = model.predict(x_val)
-    metrics = {
-        "validation": {
-            "accuracy": float(accuracy_score(y_val, predicted)),
-            "macro_f1": float(f1_score(y_val, predicted, average="macro")),
-            "clips": len(y_val),
-        }
-    }
+    predicted = list(model.predict(x_val))
+    # Scored like the test split (evaluate.py), so validation and test numbers are comparable.
+    headline = cfg["evaluation"]["nine_class_subset"]
+    validation = clip_scores(y_val, predicted, list(model.classes_), headline)
+    metrics = {"validation": {**validation, "clips": len(y_val)}}
     _write_run(run_dir, cfg, fold, model, split, metrics, manifest_path)
 
 
@@ -91,30 +78,6 @@ def _write_run(
     _write_json(run_dir / "metrics.json", metrics)
 
 
-def _read_index(cache_dir: Path, normalization: str) -> dict[str, IndexEntry]:
-    """clip_id -> (row in logmel.npy, label, dB to add for the normalization method)."""
-    if normalization not in LEVEL_COLUMNS:
-        raise ValueError(
-            f"Unknown normalization {normalization!r}. Use {', '.join(LEVEL_COLUMNS)}."
-        )
-    column = LEVEL_COLUMNS[normalization]
-    index = {}
-    with open(cache_dir / "index.csv") as f:
-        for r in csv.DictReader(f):
-            # The index stores the window's levels, so normalizing is subtracting one of them.
-            offset = -float(r[column]) if column else 0.0
-            index[r["clip_id"]] = (int(r["row"]), r["label"], offset)
-    return index
-
-
-def _features(
-    logmel: np.ndarray, index: dict[str, IndexEntry], entries: list[dict], n_mfcc: int
-) -> tuple[np.ndarray, list[str]]:
-    """MFCC features and labels for the manifest entries of one split."""
-    rows, labels, offsets = zip(*(index[e["id"]] for e in entries), strict=True)
-    return mfcc_features(logmel[list(rows)], np.array(offsets), n_mfcc), list(labels)
-
-
 def _write_json(path: Path, data) -> None:
     path.write_text(json.dumps(data, indent=2) + "\n")
 
@@ -139,7 +102,8 @@ def main() -> None:
     metrics = json.loads((run_dir / "metrics.json").read_text())["validation"]
     print(
         f"{run_dir}: validation accuracy {metrics['accuracy']:.3f}, "
-        f"macro-F1 {metrics['macro_f1']:.3f} on {metrics['clips']} clips, "
+        f"macro-F1 headline {metrics['macro_f1_headline']:.3f}, all {metrics['macro_f1_all']:.3f} "
+        f"on {metrics['clips']} clips, "
         f"trained in {time.time() - start:.0f} s"
     )
 

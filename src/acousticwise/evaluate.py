@@ -1,5 +1,13 @@
-"""Score a trained run on its fold's test split (technical design, section 8)."""
+"""Score trained runs on their folds' test splits (technical design, section 8).
 
+Usage:
+    uv run python -m acousticwise.evaluate RUN_DIR [RUN_DIR ...] [--out FILE]
+
+Adds a "test" section to each run's metrics.json, then writes one summary: a row per run
+and, for two or more runs, the mean and spread across them.
+"""
+
+import argparse
 import json
 import statistics
 from collections import Counter, defaultdict
@@ -144,3 +152,25 @@ def evaluate_runs(run_dirs: list[Path], summary_path: Path) -> None:
             [{s: row[s] for s in SUMMARY_SCORES} for row in rows]
         )
     summary_path.write_text(json.dumps(summary, indent=2) + "\n")
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("run_dirs", nargs="+", type=Path, help="run directories, one per fold")
+    parser.add_argument("--out", type=Path, default=Path("artifacts/summary.json"))
+    args = parser.parse_args()
+
+    evaluate_runs(args.run_dirs, args.out)
+    summary = json.loads(args.out.read_text())
+    for row in summary["runs"]:
+        print(
+            f"{row['run']}: test accuracy {row['accuracy']:.3f}, "
+            f"macro-F1 headline {row['macro_f1_headline']:.3f}, all {row['macro_f1_all']:.3f}"
+        )
+    for score, stats in summary.get("across_folds", {}).items():
+        print(f"{score}: {stats['mean']:.3f} ± {stats['std']:.3f} over {len(summary['runs'])} runs")
+    print(f"wrote {args.out}")
+
+
+if __name__ == "__main__":
+    main()

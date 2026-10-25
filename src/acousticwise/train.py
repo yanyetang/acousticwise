@@ -17,11 +17,11 @@ import joblib
 import numpy as np
 import sklearn
 import yaml
-from sklearn.metrics import accuracy_score, f1_score
 from sklearn.pipeline import Pipeline
 
 from acousticwise.audio.cache import load_features
 from acousticwise.data.splits import load_manifest
+from acousticwise.evaluate import clip_scores
 from acousticwise.models.baseline import make_baseline, split_features
 
 
@@ -38,14 +38,11 @@ def train_baseline(cfg: dict, fold: int, run_dir: Path) -> None:
     x_val, y_val = split_features(logmel, index, split["validation"], n_mfcc)
 
     model = make_baseline(cfg["baseline"]["classifier"], cfg["seed"]).fit(x_train, y_train)
-    predicted = model.predict(x_val)
-    metrics = {
-        "validation": {
-            "accuracy": float(accuracy_score(y_val, predicted)),
-            "macro_f1": float(f1_score(y_val, predicted, average="macro")),
-            "clips": len(y_val),
-        }
-    }
+    predicted = list(model.predict(x_val))
+    # Scored like the test split (evaluate.py), so validation and test numbers are comparable.
+    headline = cfg["evaluation"]["nine_class_subset"]
+    validation = clip_scores(y_val, predicted, list(model.classes_), headline)
+    metrics = {"validation": {**validation, "clips": len(y_val)}}
     _write_run(run_dir, cfg, fold, model, split, metrics, manifest_path)
 
 
@@ -105,7 +102,8 @@ def main() -> None:
     metrics = json.loads((run_dir / "metrics.json").read_text())["validation"]
     print(
         f"{run_dir}: validation accuracy {metrics['accuracy']:.3f}, "
-        f"macro-F1 {metrics['macro_f1']:.3f} on {metrics['clips']} clips, "
+        f"macro-F1 headline {metrics['macro_f1_headline']:.3f}, all {metrics['macro_f1_all']:.3f} "
+        f"on {metrics['clips']} clips, "
         f"trained in {time.time() - start:.0f} s"
     )
 

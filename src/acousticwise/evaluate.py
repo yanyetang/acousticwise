@@ -33,16 +33,20 @@ def clip_scores(
 ) -> dict:
     """Accuracy and macro-F1 per clip: over the headline classes and over all classes.
 
-    A class with no clips in y_true cannot be scored, so it is left out of the all-class
-    average and listed instead.
+    A class with no clips in y_true cannot be scored, so it is left out of both averages
+    and listed instead.
     """
     present = set(y_true)
-    scored = [label for label in classes if label in present]
+
+    def macro_f1(labels: list[str]) -> float:
+        # labels= picks the classes whose F1 is averaged; every clip still counts.
+        scored = [label for label in labels if label in present]
+        return float(f1_score(y_true, y_pred, labels=scored, average="macro"))
+
     return {
         "accuracy": float(accuracy_score(y_true, y_pred)),
-        # labels= picks the classes whose F1 is averaged; every clip still counts.
-        "macro_f1_headline": float(f1_score(y_true, y_pred, labels=headline, average="macro")),
-        "macro_f1_all": float(f1_score(y_true, y_pred, labels=scored, average="macro")),
+        "macro_f1_headline": macro_f1(headline),
+        "macro_f1_all": macro_f1(classes),
         "classes_without_clips": [label for label in classes if label not in present],
     }
 

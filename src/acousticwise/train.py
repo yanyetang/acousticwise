@@ -106,6 +106,7 @@ def train_cnn(cfg: dict, fold: int, run_dir: Path) -> None:
             weights = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
             best = (epoch, validation, weights)
 
+    assert best is not None, "cnn.epochs must be at least 1"
     best_epoch, validation, weights = best
     metrics = {
         "validation": {
@@ -164,6 +165,7 @@ def _write_json(path: Path, data) -> None:
 
 
 def main() -> None:
+    assert __doc__ is not None
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--config", default="configs/default.yaml")
     parser.add_argument("--fold", type=int, help="official fold 1-5 (default: data.app_fold)")

@@ -182,6 +182,7 @@ def evaluate_runs(run_dirs: list[Path], summary_path: Path) -> None:
 
 
 def main() -> None:
+    assert __doc__ is not None
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("run_dirs", nargs="+", type=Path, help="run directories, one per fold")
     parser.add_argument("--out", type=Path, default=Path("artifacts/summary.json"))

@@ -16,6 +16,9 @@ from sklearn.metrics import (
 from acousticwise.audio.cache import load_cache, settings_for
 from acousticwise.train import _features, _read_index
 
+# The scalar scores that go into the across-fold summary.
+SUMMARY_SCORES = ("accuracy", "macro_f1_headline", "macro_f1_all")
+
 
 def clip_scores(
     y_true: list[str], y_pred: list[str], classes: list[str], headline: list[str]
@@ -122,3 +125,21 @@ def _per_class(
         }
         for i, label in enumerate(classes)
     }
+
+
+def evaluate_runs(run_dirs: list[Path], summary_path: Path) -> None:
+    """Evaluate each run; write one row per run and the mean and spread across them."""
+    rows = []
+    for run_dir in run_dirs:
+        evaluate_run(run_dir)
+        test = json.loads((run_dir / "metrics.json").read_text())["test"]
+        fold = json.loads((run_dir / "config.json").read_text())["fold"]
+        scores = {score: test[score] for score in SUMMARY_SCORES}
+        rows.append({"run": run_dir.name, "fold": fold, **scores})
+
+    # The details (per class, misclassified clips) stay in each run's own metrics.json.
+    summary = {
+        "runs": rows,
+        "across_folds": fold_summary([{s: row[s] for s in SUMMARY_SCORES} for row in rows]),
+    }
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n")

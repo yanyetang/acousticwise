@@ -1,14 +1,19 @@
 #!/usr/bin/env bash
-# Upload src/acousticwise, scripts/cache_features.py and configs/default.yaml as the private Kaggle dataset
-# yanyetang/acousticwise-src, so Kaggle notebooks run the package code.
+# Upload the committed src/acousticwise, scripts/ and configs/default.yaml, plus the split
+# manifest when it exists, as the private Kaggle dataset yanyetang/acousticwise-src, so Kaggle
+# notebooks run the package code. COMMIT records the git commit the code came from.
 # First upload creates the dataset; later runs add a new version.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 stage=$(mktemp -d)
-cp -R src/acousticwise "$stage/acousticwise"
-find "$stage" -name __pycache__ -type d -prune -exec rm -rf {} +
-mkdir -p "$stage/configs" && cp configs/default.yaml "$stage/configs/"
-mkdir -p "$stage/scripts" && cp scripts/cache_features.py "$stage/scripts/"
+# The last commit, not the working tree, so unfinished edits are never uploaded.
+git archive HEAD src/acousticwise scripts configs/default.yaml | tar -x -C "$stage"
+mv "$stage/src/acousticwise" "$stage/acousticwise" && rmdir "$stage/src"
+git rev-parse HEAD > "$stage/COMMIT"
+# The manifest is not committed (DATA.md has its SHA-256); notebooks check it before use.
+if [ -f artifacts/splits.json ]; then
+  mkdir -p "$stage/artifacts" && cp artifacts/splits.json "$stage/artifacts/"
+fi
 cat > "$stage/dataset-metadata.json" <<JSON
 {"title": "acousticwise-src", "id": "yanyetang/acousticwise-src", "licenses": [{"name": "other"}]}
 JSON

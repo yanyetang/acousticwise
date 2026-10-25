@@ -4,6 +4,7 @@ Technical design, section 5.
 """
 
 import torch
+import torch.nn.functional as F
 from torch import nn
 
 TIME_POOLING = ("mean", "lstm")
@@ -55,3 +56,25 @@ class ConvNet(nn.Module):
             _, (h_n, _) = self.lstm(h)  # h_n: (2 directions, batch, 64)
             z = torch.cat([h_n[0], h_n[1]], dim=1)
         return self.head(self.dropout(z))  # (batch, n_classes)
+
+
+def train_epoch(
+    model: nn.Module,
+    x: torch.Tensor,
+    y: torch.Tensor,
+    optimizer: torch.optim.Optimizer,
+    batch_size: int,
+    generator: torch.Generator,
+) -> float:
+    """One pass over the clips in a shuffled order; return the mean loss per clip."""
+    model.train()
+    order = torch.randperm(len(x), generator=generator)  # a new shuffle every epoch
+    total_loss = 0.0
+    for start in range(0, len(order), batch_size):
+        batch = order[start : start + batch_size]  # the last batch may be shorter
+        loss = F.cross_entropy(model(x[batch]), y[batch])
+        optimizer.zero_grad()  # gradients add up unless cleared
+        loss.backward()
+        optimizer.step()
+        total_loss += loss.item() * len(batch)
+    return total_loss / len(order)

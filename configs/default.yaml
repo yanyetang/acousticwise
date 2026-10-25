@@ -15,7 +15,7 @@ audio:
   window_seconds: 5.0
   hop_seconds: 2.5                   # for uploads longer than one window
   min_seconds: 4.0                   # shorter clips raise AudioTooShortError; 4.0 s and up are zero-padded
-  normalization: none                # peak | rms | none, chosen on validation data, applied on load
+  normalization: rms                 # peak | rms | none; rms ties none on validation and ignores recording level (docs/results.md)
 
 features:
   n_fft: 2048
@@ -30,7 +30,7 @@ validation:                          # set from the dataset report (docs/dataset
   silence_rms: 1.0e-4                # -80 dBFS; the quietest dataset clip is -51 dBFS
 
 baseline:
-  classifier: svm                    # svm | random_forest, chosen on validation (R1)
+  classifier: random_forest          # svm | random_forest; random_forest won on validation (R1)
 
 evaluation:
   nine_class_subset:                 # background plus classes with >= 50 training vessels in every fold

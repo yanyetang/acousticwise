@@ -1,5 +1,7 @@
 """Score a trained run on its fold's test split (technical design, section 8)."""
 
+from collections import Counter, defaultdict
+
 from sklearn.metrics import accuracy_score, f1_score
 
 
@@ -20,3 +22,19 @@ def clip_scores(
         "macro_f1_all": float(f1_score(y_true, y_pred, labels=scored, average="macro")),
         "classes_without_clips": [label for label in classes if label not in present],
     }
+
+
+def vessel_counts(labels: list[str], groups: list[str]) -> dict[str, dict]:
+    """Per class: the number of vessels (days for background) and the largest one's clip share."""
+    by_label = defaultdict(list)
+    for label, group in zip(labels, groups, strict=True):
+        by_label[label].append(group)
+
+    counts = {}
+    for label, clip_groups in by_label.items():
+        clips_per_vessel = Counter(clip_groups)
+        counts[label] = {
+            "vessels": len(clips_per_vessel),
+            "largest_vessel_share": max(clips_per_vessel.values()) / len(clip_groups),
+        }
+    return counts

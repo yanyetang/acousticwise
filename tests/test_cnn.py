@@ -1,7 +1,7 @@
 import pytest
 import torch
 
-from acousticwise.models.cnn import ConvNet, train_epoch
+from acousticwise.models.cnn import ConvNet, set_seed, train_epoch
 
 
 @pytest.mark.parametrize("time_pooling", ["mean", "lstm"])  # CNN, CRNN
@@ -37,3 +37,22 @@ def test_a_few_epochs_lower_the_training_loss(time_pooling):
 
     # The loss is the mean over the epoch's batches; learning shows as a lower loss.
     assert losses[-1] < losses[0]
+
+
+def losses_for_seed(seed, time_pooling, epochs=2):
+    """Seed everything, then train a fresh model; nothing else is seeded by hand."""
+    set_seed(seed)
+    x, y = two_class_clips()
+    model = ConvNet(n_classes=2, time_pooling=time_pooling)  # random starting weights
+    optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+    shuffle = torch.Generator().manual_seed(seed)
+    return [
+        train_epoch(model, x, y, optimizer, batch_size=4, generator=shuffle) for _ in range(epochs)
+    ]
+
+
+@pytest.mark.parametrize("time_pooling", ["mean", "lstm"])
+def test_the_same_seed_gives_the_same_losses(time_pooling):
+    assert losses_for_seed(7, time_pooling) == losses_for_seed(7, time_pooling)
+    # And the seed matters: another one starts from other weights.
+    assert losses_for_seed(7, time_pooling) != losses_for_seed(8, time_pooling)

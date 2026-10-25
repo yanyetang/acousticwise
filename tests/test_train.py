@@ -4,41 +4,9 @@ import json
 import joblib
 import numpy as np
 import pytest
-import yaml
 
-from acousticwise.audio.cache import build_cache, settings_for
-from acousticwise.data.dataset import Recording
 from acousticwise.data.splits import save_manifest
 from acousticwise.train import train_baseline
-from tests.conftest import tone
-
-FREQS = {"cargo": 200.0, "tug": 1000.0}  # one easy-to-tell tone per class
-
-
-@pytest.fixture
-def baseline_inputs(tmp_path, write_wav):
-    """A config whose cache and manifest point at a tiny fixture: 6 train and 2 validation
-    clips per class, each clip a tone of its class at its own loudness."""
-    with open("configs/default.yaml") as f:
-        cfg = yaml.safe_load(f)
-    cfg["data"]["cache_dir"] = str(tmp_path / "cache")
-    cfg["data"]["splits_path"] = str(tmp_path / "splits.json")
-
-    recordings, entries = [], {"train": [], "validation": [], "test": []}
-    for label, freq in FREQS.items():
-        for k in range(8):
-            split = "train" if k < 6 else "validation"
-            samples = tone(5.0, 32000, freq=freq, amplitude=0.1 + 0.05 * k)
-            path = write_wav(samples, 32000, name=f"{label}_{k}.wav")
-            clip_id, group = f"{label}/{k}", f"mmsi:{label}{k}"
-            recordings.append(Recording(id=clip_id, path=path, label=label, group=group))
-            entries[split].append({"id": clip_id, "group": group})
-
-    sample_rate = cfg["audio"]["sample_rate"]
-    build_cache(recordings, tmp_path / "cache" / f"sr{sample_rate}", settings_for(cfg, sample_rate))
-    manifest = {"source": "official", "folds": {"1": entries}}
-    save_manifest(manifest, tmp_path / "splits.json")
-    return cfg, manifest
 
 
 def test_train_baseline_writes_a_complete_run_directory(baseline_inputs, tmp_path):
@@ -63,8 +31,26 @@ def test_train_baseline_writes_a_complete_run_directory(baseline_inputs, tmp_pat
     metrics = json.loads((run_dir / "metrics.json").read_text())
     assert set(metrics) == {"validation"}
     assert metrics["validation"]["accuracy"] == 1.0
-    assert metrics["validation"]["macro_f1"] == 1.0
+    assert metrics["validation"]["macro_f1_headline"] == 1.0
+    assert metrics["validation"]["macro_f1_all"] == 1.0
+    assert metrics["validation"]["classes_without_clips"] == []
     assert metrics["validation"]["clips"] == 4
+
+
+def test_train_baseline_validation_leaves_out_classes_with_no_clips(baseline_inputs, tmp_path):
+    cfg, manifest = baseline_inputs
+    # Like pilotvessel, which is in no validation split: here tug has no validation clips.
+    fold = manifest["folds"]["1"]
+    fold["validation"] = [e for e in fold["validation"] if e["id"].startswith("cargo/")]
+    save_manifest(manifest, tmp_path / "splits.json")
+
+    train_baseline(cfg, fold=1, run_dir=tmp_path / "run")
+
+    # Scored like the test split, so the two are comparable: tug is listed, not counted as 0.
+    validation = json.loads((tmp_path / "run" / "metrics.json").read_text())["validation"]
+    assert validation["macro_f1_all"] == 1.0
+    assert validation["macro_f1_headline"] == 1.0  # tug is a headline class here, but unscored
+    assert validation["classes_without_clips"] == ["tug"]
 
 
 @pytest.mark.parametrize("classifier", ["svm", "random_forest"])

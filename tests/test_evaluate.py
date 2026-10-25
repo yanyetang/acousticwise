@@ -1,4 +1,5 @@
 import json
+import shutil
 
 import pytest
 
@@ -122,6 +123,25 @@ def test_evaluate_run_adds_the_test_results_to_the_run_metrics(baseline_inputs, 
     assert test["misclassified"] == [
         {"id": "tug/9", "group": "mmsi:tug9", "label": "tug", "predicted": "cargo"}
     ]
+
+
+def test_evaluate_run_reads_the_cache_from_another_folder(baseline_inputs, tmp_path):
+    # A run trained on another machine (Kaggle) records that machine's cache path.
+    cfg, _ = baseline_inputs
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+    record = (run_dir / "config.json").read_text()
+    local_cache = tmp_path / "local_cache"
+    shutil.move(cfg["data"]["cache_dir"], local_cache)
+
+    evaluate_run(run_dir, cache_dir=local_cache)
+
+    # Same features from the new folder, so the same score as at the recorded path.
+    assert json.loads((run_dir / "metrics.json").read_text())["test"]["accuracy"] == (
+        pytest.approx(3 / 4)
+    )
+    # The run's record still says how it was trained; only this evaluation looked elsewhere.
+    assert (run_dir / "config.json").read_text() == record
 
 
 def test_evaluate_runs_writes_each_fold_and_the_mean_and_spread(baseline_inputs, tmp_path):

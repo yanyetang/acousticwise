@@ -21,8 +21,8 @@ from sklearn.metrics import (
     precision_recall_fscore_support,
 )
 
-from acousticwise.audio.cache import load_cache, settings_for
-from acousticwise.train import _features, _read_index
+from acousticwise.audio.cache import load_features
+from acousticwise.models.baseline import split_features
 
 # The scalar scores that go into the across-fold summary.
 SUMMARY_SCORES = ("accuracy", "macro_f1_headline", "macro_f1_all")
@@ -81,11 +81,8 @@ def evaluate_run(run_dir: Path) -> None:
     split = json.loads((run_dir / "splits.json").read_text())
     classes = json.loads((run_dir / "labels.json").read_text())
 
-    sample_rate = cfg["audio"]["sample_rate"]
-    cache_dir = Path(cfg["data"]["cache_dir"]) / f"sr{sample_rate}"
-    logmel = load_cache(cache_dir, settings_for(cfg, sample_rate))
-    index = _read_index(cache_dir, cfg["audio"]["normalization"])
-    x_test, y_test = _features(logmel, index, split["test"], cfg["features"]["n_mfcc"])
+    logmel, index = load_features(cfg)
+    x_test, y_test = split_features(logmel, index, split["test"], cfg["features"]["n_mfcc"])
     predicted = list(joblib.load(run_dir / "model.joblib").predict(x_test))
 
     test = clip_scores(y_test, predicted, classes, cfg["evaluation"]["nine_class_subset"])

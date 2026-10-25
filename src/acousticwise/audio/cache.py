@@ -44,6 +44,12 @@ def settings_for(cfg: dict, sample_rate: int) -> CacheSettings:
 # The columns of index.csv; "row" is the clip's row in logmel.npy.
 INDEX_COLUMNS = ["clip_id", "row", "label", "padded", "peak_db", "rms_db"]
 
+# One index.csv entry on load: the clip's row in logmel.npy, its label and its offset in dB.
+IndexEntry = tuple[int, str, float]
+
+# The index.csv level each normalization method subtracts; "none" subtracts nothing.
+LEVEL_COLUMNS = {"peak": "peak_db", "rms": "rms_db", "none": None}
+
 
 def build_cache(
     recordings: list[Recording],
@@ -143,3 +149,30 @@ def load_cache(cache_dir: Path, settings: CacheSettings) -> np.ndarray:
         )
 
     return np.load(cache_dir / "logmel.npy", mmap_mode="r")
+
+
+def read_index(cache_dir: Path, normalization: str) -> dict[str, IndexEntry]:
+    """clip_id -> (row in logmel.npy, label, dB to add for the normalization method)."""
+    if normalization not in LEVEL_COLUMNS:
+        raise ValueError(
+            f"Unknown normalization {normalization!r}. Use {', '.join(LEVEL_COLUMNS)}."
+        )
+    column = LEVEL_COLUMNS[normalization]
+    index = {}
+    with open(cache_dir / "index.csv") as f:
+        for r in csv.DictReader(f):
+            # The index stores the window's levels, so normalizing is subtracting one of them.
+            offset = -float(r[column]) if column else 0.0
+            index[r["clip_id"]] = (int(r["row"]), r["label"], offset)
+    return index
+
+
+def load_features(cfg: dict) -> tuple[np.ndarray, dict[str, IndexEntry]]:
+    """The config's cache (refused if built with other settings) and its index.
+
+    Training and evaluation both load through here, so they cannot read features differently.
+    """
+    sample_rate = cfg["audio"]["sample_rate"]
+    cache_dir = Path(cfg["data"]["cache_dir"]) / f"sr{sample_rate}"
+    logmel = load_cache(cache_dir, settings_for(cfg, sample_rate))
+    return logmel, read_index(cache_dir, cfg["audio"]["normalization"])

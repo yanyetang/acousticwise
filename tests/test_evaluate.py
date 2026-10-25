@@ -155,3 +155,16 @@ def test_evaluate_runs_writes_each_fold_and_the_mean_and_spread(baseline_inputs,
         "mean": pytest.approx(0.875),
         "std": pytest.approx(0.125 * 2**0.5),
     }
+
+
+def test_evaluate_runs_on_one_run_writes_no_spread(baseline_inputs, tmp_path):
+    cfg, _ = baseline_inputs
+    cfg["evaluation"]["nine_class_subset"] = ["cargo", "tug"]
+    train_baseline(cfg, fold=1, run_dir=tmp_path / "fold1")
+
+    evaluate_runs([tmp_path / "fold1"], tmp_path / "summary.json")
+
+    # One fold has no spread, so the summary holds only its row.
+    summary = json.loads((tmp_path / "summary.json").read_text())
+    assert [r["run"] for r in summary["runs"]] == ["fold1"]
+    assert "across_folds" not in summary

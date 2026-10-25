@@ -1,6 +1,6 @@
 import pytest
 
-from acousticwise.evaluate import clip_scores, vessel_counts
+from acousticwise.evaluate import clip_scores, fold_summary, vessel_counts
 
 
 def test_clip_scores_gives_the_headline_and_all_class_macro_f1():
@@ -50,4 +50,24 @@ def test_vessel_counts_gives_vessels_and_largest_vessel_share_per_class():
         "tug": {"vessels": 2, "largest_vessel_share": 0.75},
         # Background is grouped by day, so its "vessels" are recording days.
         "background": {"vessels": 1, "largest_vessel_share": 1.0},
+    }
+
+
+def test_fold_summary_gives_mean_and_spread_over_five_folds():
+    folds = [
+        {"accuracy": 0.4, "macro_f1_headline": 0.30},
+        {"accuracy": 0.4, "macro_f1_headline": 0.32},
+        {"accuracy": 0.4, "macro_f1_headline": 0.28},
+        {"accuracy": 0.4, "macro_f1_headline": 0.34},
+        {"accuracy": 0.4, "macro_f1_headline": 0.26},
+    ]
+
+    summary = fold_summary(folds)
+
+    assert summary["accuracy"] == {"mean": pytest.approx(0.4), "std": pytest.approx(0.0)}
+    # Spread is the sample standard deviation (divide by n - 1 = 4): squared gaps from 0.30
+    # sum to 0.004, so std = sqrt(0.004 / 4) = 0.0316. Dividing by 5 would give 0.0283.
+    assert summary["macro_f1_headline"] == {
+        "mean": pytest.approx(0.30),
+        "std": pytest.approx(0.0316228, abs=1e-6),
     }

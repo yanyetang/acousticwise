@@ -88,3 +88,13 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+
+
+def pick_device() -> torch.device:
+    """The fastest device available: an NVIDIA GPU (cuda), then Apple silicon (mps), then cpu."""
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        return torch.device("mps")
+    else:
+        return torch.device("cpu")

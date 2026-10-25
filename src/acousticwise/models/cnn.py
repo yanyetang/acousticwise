@@ -3,6 +3,9 @@
 Technical design, section 5.
 """
 
+import random
+
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch import nn
@@ -78,3 +81,10 @@ def train_epoch(
         optimizer.step()
         total_loss += loss.item() * len(batch)
     return total_loss / len(order)
+
+
+def set_seed(seed: int) -> None:
+    """Seed Python, NumPy and PyTorch, so a run can be repeated exactly."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)

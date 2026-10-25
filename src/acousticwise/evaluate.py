@@ -1,9 +1,20 @@
 """Score a trained run on its fold's test split (technical design, section 8)."""
 
+import json
 import statistics
 from collections import Counter, defaultdict
+from pathlib import Path
 
-from sklearn.metrics import accuracy_score, f1_score
+import joblib
+from sklearn.metrics import (
+    accuracy_score,
+    confusion_matrix,
+    f1_score,
+    precision_recall_fscore_support,
+)
+
+from acousticwise.audio.cache import load_cache, settings_for
+from acousticwise.train import _features, _read_index
 
 
 def clip_scores(
@@ -49,3 +60,65 @@ def fold_summary(folds: list[dict[str, float]]) -> dict[str, dict[str, float]]:
         # stdev divides by n - 1: the folds are a small sample of the possible vessel splits.
         summary[score] = {"mean": statistics.mean(values), "std": statistics.stdev(values)}
     return summary
+
+
+def evaluate_run(run_dir: Path) -> None:
+    """Score a run's model on its fold's test clips; add the results to its metrics.json."""
+    # The run's own config and split: the same preprocessing it was trained with, and the
+    # test vessels it never heard.
+    cfg = json.loads((run_dir / "config.json").read_text())["config"]
+    split = json.loads((run_dir / "splits.json").read_text())
+    classes = json.loads((run_dir / "labels.json").read_text())
+
+    sample_rate = cfg["audio"]["sample_rate"]
+    cache_dir = Path(cfg["data"]["cache_dir"]) / f"sr{sample_rate}"
+    logmel = load_cache(cache_dir, settings_for(cfg, sample_rate))
+    index = _read_index(cache_dir, cfg["audio"]["normalization"])
+    x_test, y_test = _features(logmel, index, split["test"], cfg["features"]["n_mfcc"])
+    predicted = list(joblib.load(run_dir / "model.joblib").predict(x_test))
+
+    test = clip_scores(y_test, predicted, classes, cfg["evaluation"]["nine_class_subset"])
+    test["clips"] = len(y_test)
+    train_labels = [index[e["id"]][1] for e in split["train"]]
+    test["per_class"] = _per_class(
+        y_test,
+        predicted,
+        classes,
+        train=vessel_counts(train_labels, [e["group"] for e in split["train"]]),
+        test=vessel_counts(y_test, [e["group"] for e in split["test"]]),
+    )
+    # Rows are the true class, columns the predicted class.
+    matrix = confusion_matrix(y_test, predicted, labels=classes)
+    test["confusion_matrix"] = {"labels": classes, "matrix": matrix.tolist()}
+    test["misclassified"] = [
+        {"id": e["id"], "group": e["group"], "label": label, "predicted": guess}
+        for e, label, guess in zip(split["test"], y_test, predicted, strict=True)
+        if label != guess
+    ]
+
+    metrics_path = run_dir / "metrics.json"
+    metrics = json.loads(metrics_path.read_text())
+    metrics["test"] = test
+    metrics_path.write_text(json.dumps(metrics, indent=2) + "\n")
+
+
+def _per_class(
+    y_true: list[str], y_pred: list[str], classes: list[str], train: dict, test: dict
+) -> dict[str, dict]:
+    """Precision, recall, F1 and clips per class, beside its train and test vessel counts."""
+    precision, recall, f1, clips = precision_recall_fscore_support(
+        y_true, y_pred, labels=classes, zero_division=0
+    )
+    no_vessels = {"vessels": 0, "largest_vessel_share": 0.0}  # a class missing from a split
+    return {
+        label: {
+            "precision": float(precision[i]),
+            "recall": float(recall[i]),
+            "f1": float(f1[i]),
+            "clips": int(clips[i]),
+            "train_vessels": train.get(label, no_vessels)["vessels"],
+            "test_vessels": test.get(label, no_vessels)["vessels"],
+            "largest_vessel_share": test.get(label, no_vessels)["largest_vessel_share"],
+        }
+        for i, label in enumerate(classes)
+    }

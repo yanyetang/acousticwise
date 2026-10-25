@@ -25,7 +25,7 @@ from sklearn.metrics import (
 
 from acousticwise.audio.cache import IndexEntry, load_features
 from acousticwise.models.baseline import split_features
-from acousticwise.models.cnn import ConvNet, predict_classes, split_logmel
+from acousticwise.models.cnn import ConvNet, predict_classes, split_logmel, standardize
 
 # The scalar scores that go into the across-fold summary.
 SUMMARY_SCORES = ("accuracy", "macro_f1_headline", "macro_f1_all")
@@ -129,10 +129,10 @@ def _predict(
     cfg = record["config"]
     if (run_dir / "model.pt").exists():  # CNN or CRNN: the weights, scaled like training
         x, y_true = split_logmel(logmel, index, entries)
-        scaling = record["input_scaling"]
-        x = (x - scaling["mean"]) / scaling["std"]
+        x = standardize(x, record["input_scaling"])
         model = ConvNet(len(classes), cfg["cnn"]["time_pooling"])
-        model.load_state_dict(torch.load(run_dir / "model.pt"))
+        # map_location: weights saved on a GPU still load on a machine without one.
+        model.load_state_dict(torch.load(run_dir / "model.pt", map_location="cpu"))
         indices = predict_classes(model, torch.from_numpy(x), cfg["cnn"]["batch_size"])
         return y_true, [classes[i] for i in indices]
     # Baseline: MFCC summaries into the saved scikit-learn pipeline.

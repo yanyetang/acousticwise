@@ -31,6 +31,7 @@ from acousticwise.models.cnn import (
     predict_classes,
     set_seed,
     split_logmel,
+    standardize,
     train_epoch,
 )
 
@@ -74,12 +75,13 @@ def train_cnn(cfg: dict, fold: int, run_dir: Path) -> None:
         "mean": float(x_train.mean(dtype=np.float64)),
         "std": float(x_train.std(dtype=np.float64)),
     }
-    x_train = torch.from_numpy((x_train - scaling["mean"]) / scaling["std"])
-    x_val = torch.from_numpy((x_val - scaling["mean"]) / scaling["std"])
+    x_train = torch.from_numpy(standardize(x_train, scaling))
+    x_val = torch.from_numpy(standardize(x_val, scaling))
 
     # PyTorch needs class indices; labels.json keeps the names in the same order.
     classes = sorted(set(y_train))
-    y_train_idx = torch.tensor([classes.index(label) for label in y_train])
+    class_index = {name: i for i, name in enumerate(classes)}
+    y_train_idx = torch.tensor([class_index[label] for label in y_train])
 
     params = cfg["cnn"]
     set_seed(cfg["seed"])

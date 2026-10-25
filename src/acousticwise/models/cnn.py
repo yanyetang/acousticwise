@@ -112,6 +112,16 @@ def split_logmel(
     return x, list(labels)
 
 
+def standardize(x: np.ndarray, scaling: dict[str, float]) -> np.ndarray:
+    """Shift and scale log-mels by the training clips' mean and std, in place (no second copy).
+
+    Training, evaluation and inference all call this, so inputs are always prepared alike.
+    """
+    x -= scaling["mean"]
+    x /= scaling["std"]
+    return x
+
+
 def set_seed(seed: int) -> None:
     """Seed Python, NumPy and PyTorch, so a run can be repeated exactly."""
     random.seed(seed)

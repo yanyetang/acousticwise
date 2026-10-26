@@ -31,6 +31,7 @@ acousticwise/
       cnn.py               # compact CNN; CRNN variant via a time-pooling setting
     train.py               # CLI: train baseline or CNN, device auto-select
     evaluate.py            # metrics, confusion matrix, 12- and 9-class (M4)
+    compare.py             # model comparison table across folds (M5)
     inference.py           # Predictor: the only API the app uses
     errors.py              # typed input/inference errors
   app/streamlit_app.py     # UI only; no ML logic
@@ -163,7 +164,7 @@ Single Streamlit page: file uploader, "Classify" button, result card (predicted 
 
 ## 8. Evaluation (M4, M5)
 
-`uv run python -m acousticwise.evaluate RUN_DIR [RUN_DIR ...] [--out FILE]` scores each run on its own fold's test split, using the run's `config.json`, `labels.json` and `splits.json`, and adds a `"test"` section to its `metrics.json`:
+`uv run python -m acousticwise.evaluate RUN_DIR [RUN_DIR ...] [--out FILE] [--cache-dir DIR]` scores each run on its own fold's test split, using the run's `config.json`, `labels.json` and `splits.json`, and adds a `"test"` section to its `metrics.json`. Every preprocessing setting comes from the run's `config.json`; only the cache location can be overridden with `--cache-dir`, for a run trained on another machine (Kaggle), whose record holds that machine's path. The run's files are not changed by it.
 - accuracy, the 9-class macro-F1 (headline) and the 12-class macro-F1. The 9-class subset is a config list (every class with at least 50 distinct training vessels in every fold, plus background: dredger, pilotvessel and rescue are out); its score is F1 averaged over those 9 labels on the full test set from the same 12-class model (scikit-learn `labels=`). Both averages use only the classes with clips in the split; the classes without any (for example dredger in fold 1's test) are listed in `classes_without_clips` instead of counting as 0;
 - per class: precision, recall, F1 and clips, beside the number of distinct train and test vessels and the share of test clips from the largest test vessel (background grouped by day);
 - the confusion matrix (rows true, columns predicted) with its class order;
@@ -171,7 +172,9 @@ Single Streamlit page: file uploader, "Classify" button, result card (predicted 
 
 It then writes one summary (default `artifacts/summary.json`): a row per run with its fold and the three scalar scores, and, for two or more runs, their mean and sample standard deviation (`across_folds`). One run has no spread, so it gets no `across_folds`.
 
-Added later: a vessel-vote table (mean softmax over a vessel's clips, P1), and the baseline vs CNN vs CRNN comparison table rendered in the README.
+`uv run python -m acousticwise.compare NAME=SUMMARY [NAME=SUMMARY ...]` prints one markdown table from several models' summaries: per model, the mean ± std of the 9-class macro-F1, the 12-class macro-F1 and accuracy, then the 9-class macro-F1 of each fold in fold order, so models can be compared fold by fold. The table is in `docs/results.md`.
+
+Added later: a vessel-vote table (mean softmax over a vessel's clips, P1), and the comparison table in the README.
 
 ## 9. Testing (E3)
 
@@ -203,4 +206,4 @@ A second dataset needs its own `DatasetLoader`, a coarse label mapping defined i
 
 Kaggle's `/tmp` is wiped when a session ends, so step 1 is rerun from the zip if needed; `cache_features.py` is idempotent. Unzipped copies of the audio are not kept on Kaggle: the extraction (about 30 minutes) is paid once per run, and runs are batched (cache build and sample export together) to limit repeats.
 
-**Development data.** Code and tests run on the laptop against synthetic fixtures (generated WAVs and CSVs shaped like the bundle) and the 36 sample clips in `app/samples/`. The baseline is trained locally on the full cache, not on the sample. The CNN is trained locally unless that proves too slow, then on Kaggle.
+**Development data.** Code and tests run on the laptop against synthetic fixtures (generated WAVs and CSVs shaped like the bundle) and the 36 sample clips in `app/samples/`. The baseline is trained locally on the full cache, not on the sample. The CNN and CRNN are trained on Kaggle (one epoch took 95 s and 9 GB of memory on the laptop): `notebooks/spectrogram_grid/upload_src.sh` uploads the last commit's code, its commit id and the split manifest as a private dataset, and `notebooks/cnn_train/` runs the training command line for every fold on a GPU with the cache dataset attached, then writes a `checksums.txt` of the run files. The runs are downloaded, checked against it and evaluated on the laptop with `--cache-dir` (section 8).

@@ -1,7 +1,7 @@
 """Score trained runs on their folds' test splits (technical design, section 8).
 
 Usage:
-    uv run python -m acousticwise.evaluate RUN_DIR [RUN_DIR ...] [--out FILE]
+    uv run python -m acousticwise.evaluate RUN_DIR [RUN_DIR ...] [--out FILE] [--cache-dir DIR]
 
 Adds a "test" section to each run's metrics.json, then writes one summary: a row per run
 and, for two or more runs, the mean and spread across them.
@@ -80,12 +80,17 @@ def fold_summary(folds: list[dict[str, float]]) -> dict[str, dict[str, float]]:
     return summary
 
 
-def evaluate_run(run_dir: Path) -> None:
-    """Score a run's model on its fold's test clips; add the results to its metrics.json."""
+def evaluate_run(run_dir: Path, cache_dir: Path | None = None) -> None:
+    """Score a run's model on its fold's test clips; add the results to its metrics.json.
+
+    cache_dir: where the feature cache is on this machine, when not at the recorded path.
+    """
     # The run's own config and split: the same preprocessing it was trained with, and the
     # test vessels it never heard.
     record = json.loads((run_dir / "config.json").read_text())
     cfg = record["config"]
+    if cache_dir is not None:  # e.g. a run trained on Kaggle, scored on this machine
+        cfg = {**cfg, "data": {**cfg["data"], "cache_dir": str(cache_dir)}}
     split = json.loads((run_dir / "splits.json").read_text())
     classes = json.loads((run_dir / "labels.json").read_text())
 
@@ -162,11 +167,11 @@ def _per_class(
     }
 
 
-def evaluate_runs(run_dirs: list[Path], summary_path: Path) -> None:
+def evaluate_runs(run_dirs: list[Path], summary_path: Path, cache_dir: Path | None = None) -> None:
     """Evaluate each run; write one row per run and the mean and spread across them."""
     rows = []
     for run_dir in run_dirs:
-        evaluate_run(run_dir)
+        evaluate_run(run_dir, cache_dir)
         test = json.loads((run_dir / "metrics.json").read_text())["test"]
         fold = json.loads((run_dir / "config.json").read_text())["fold"]
         scores = {score: test[score] for score in SUMMARY_SCORES}
@@ -186,9 +191,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("run_dirs", nargs="+", type=Path, help="run directories, one per fold")
     parser.add_argument("--out", type=Path, default=Path("artifacts/summary.json"))
+    parser.add_argument(
+        "--cache-dir", type=Path, help="feature cache on this machine (default: the run's path)"
+    )
     args = parser.parse_args()
 
-    evaluate_runs(args.run_dirs, args.out)
+    evaluate_runs(args.run_dirs, args.out, args.cache_dir)
     summary = json.loads(args.out.read_text())
     for row in summary["runs"]:
         print(

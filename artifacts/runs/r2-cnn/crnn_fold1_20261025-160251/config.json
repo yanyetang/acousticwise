@@ -1,0 +1,65 @@
+{
+  "config": {
+    "seed": 42,
+    "data": {
+      "bundle_dir": "data/uniqueship",
+      "cache_dir": "/kaggle/input/datasets/yanyetang/acousticwise-cache/cache",
+      "splits_path": "/kaggle/input/datasets/yanyetang/acousticwise-src/artifacts/splits.json",
+      "app_fold": 1,
+      "runs_dir": "/kaggle/working/runs"
+    },
+    "audio": {
+      "sample_rate": 32000,
+      "window_seconds": 5.0,
+      "hop_seconds": 2.5,
+      "min_seconds": 4.0,
+      "normalization": "rms"
+    },
+    "features": {
+      "n_fft": 2048,
+      "hop_length": 512,
+      "n_mels": 64,
+      "n_mfcc": 20,
+      "cache_format": 1
+    },
+    "validation": {
+      "max_file_mb": 200,
+      "max_seconds": 300,
+      "silence_rms": 0.0001
+    },
+    "baseline": {
+      "classifier": "random_forest"
+    },
+    "cnn": {
+      "time_pooling": "lstm",
+      "epochs": 25,
+      "batch_size": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0001
+    },
+    "evaluation": {
+      "nine_class_subset": [
+        "background",
+        "cargo",
+        "fishing",
+        "other",
+        "passengership",
+        "pleasurecraft",
+        "sailing",
+        "tanker",
+        "tug"
+      ]
+    }
+  },
+  "fold": 1,
+  "versions": {
+    "python": "3.13.15",
+    "numpy": "2.1.3",
+    "torch": "2.11.0+cu128"
+  },
+  "manifest_sha256": "84591f54320f34d6872f4b5de769869ba72eada9d8677fa98b37bac8e4916a18",
+  "input_scaling": {
+    "mean": -8.302342755441721,
+    "std": 15.164325091128058
+  }
+}

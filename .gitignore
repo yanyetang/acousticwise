@@ -11,6 +11,9 @@
 artifacts/**/*.pt
 artifacts/**/*.joblib
 artifacts/**/splits.json
+# Kaggle download leftovers: the raw notebook log, and checksums taken before evaluation
+artifacts/**/*.log
+artifacts/**/checksums.txt
 
 # Python
 __pycache__/

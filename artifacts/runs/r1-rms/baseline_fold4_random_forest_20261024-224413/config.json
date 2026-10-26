@@ -1,0 +1,54 @@
+{
+  "config": {
+    "seed": 42,
+    "data": {
+      "bundle_dir": "data/uniqueship",
+      "cache_dir": "data/cache",
+      "splits_path": "artifacts/splits.json",
+      "app_fold": 1,
+      "runs_dir": "artifacts/runs/r1-rms"
+    },
+    "audio": {
+      "sample_rate": 32000,
+      "window_seconds": 5.0,
+      "hop_seconds": 2.5,
+      "min_seconds": 4.0,
+      "normalization": "rms"
+    },
+    "features": {
+      "n_fft": 2048,
+      "hop_length": 512,
+      "n_mels": 64,
+      "n_mfcc": 20,
+      "cache_format": 1
+    },
+    "validation": {
+      "max_file_mb": 200,
+      "max_seconds": 300,
+      "silence_rms": 0.0001
+    },
+    "baseline": {
+      "classifier": "random_forest"
+    },
+    "evaluation": {
+      "nine_class_subset": [
+        "background",
+        "cargo",
+        "fishing",
+        "other",
+        "passengership",
+        "pleasurecraft",
+        "sailing",
+        "tanker",
+        "tug"
+      ]
+    }
+  },
+  "fold": 4,
+  "versions": {
+    "python": "3.12.15",
+    "numpy": "2.5.4",
+    "scikit-learn": "1.9.1"
+  },
+  "manifest_sha256": "84591f54320f34d6872f4b5de769869ba72eada9d8677fa98b37bac8e4916a18"
+}

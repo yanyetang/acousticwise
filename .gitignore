@@ -23,6 +23,7 @@ __pycache__/
 .ruff_cache/
 
 # Quality tool output: coverage reports, and crapper/dryer/mutator snapshots and review reports
+.coverage
 target/
 .metrics/
 

@@ -22,6 +22,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
+# Quality tool output: coverage reports, and crapper/dryer/mutator snapshots and review reports
+target/
+.metrics/
+
 # Raw research notes, reports built from them, and local working plans
 docs/research_notes/
 docs/reports/

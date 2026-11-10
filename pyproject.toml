@@ -21,6 +21,7 @@ dev = [
     "pandas>=3.1.0",
     "pre-commit>=4.7.0",
     "pytest>=8",
+    "pytest-cov>=7.1.0",
     "ruff>=0.6",
 ]
 
@@ -30,7 +31,11 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers"
+# Coverage on every run: a per-file table with missing lines, and LCOV for crapper.
+# The 90% floor is in CI only, so a run of one test file doesn't fail on coverage.
+addopts = """-ra --strict-markers \
+--cov=acousticwise --cov-report=term-missing \
+--cov-report=lcov:target/coverage/python/lcov.info"""
 
 [tool.ruff]
 line-length = 100

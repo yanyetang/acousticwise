@@ -17,7 +17,15 @@ def load_predictor(run_dir: str) -> Predictor:
     return Predictor.load(Path(run_dir))
 
 
-predictor = load_predictor(os.environ["ACOUSTICWISE_RUN_DIR"])
+run_dir = os.environ.get("ACOUSTICWISE_RUN_DIR")
+if run_dir is None:
+    st.error("No model run is set. Start the app with `uv run acousticwise-app`.")
+    st.stop()
+try:
+    predictor = load_predictor(run_dir)
+except FileNotFoundError:
+    st.error(f"No trained model found in {run_dir}. Train one, or set ACOUSTICWISE_RUN_DIR.")
+    st.stop()
 
 st.title("AcousticWise")
 uploaded = st.file_uploader("Upload a WAV recording", type=["wav"])

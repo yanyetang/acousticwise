@@ -9,6 +9,7 @@ import torch
 from acousticwise.audio.features import log_mel, normalization_offset_db
 from acousticwise.audio.io import load_audio
 from acousticwise.audio.preprocess import check_not_silent, make_windows
+from acousticwise.errors import AudioTooLongError, FileTooLargeError
 from acousticwise.models.baseline import mfcc_features
 from acousticwise.models.cnn import ConvNet, standardize
 
@@ -53,8 +54,21 @@ class Predictor:
         """Score each window of the file; the file's scores are the mean over its windows."""
         audio, features = self.cfg["audio"], self.cfg["features"]
         sr = audio["sample_rate"]
+        limits = self.cfg["validation"]
+        # Checked before reading, so a huge upload is refused without loading it.
+        # MB as Streamlit counts its upload cap: 1024 * 1024 bytes.
+        size_mb = Path(wav_path).stat().st_size / (1024 * 1024)
+        if size_mb > limits["max_file_mb"]:
+            raise FileTooLargeError(
+                f"File is too large: {size_mb:.1f} MB > {limits['max_file_mb']} MB"
+            )
         samples = load_audio(wav_path, sr)
-        check_not_silent(samples, self.cfg["validation"]["silence_rms"])
+        seconds = len(samples) / sr
+        if seconds > limits["max_seconds"]:
+            raise AudioTooLongError(
+                f"Audio is too long: {seconds:.1f}s > {limits['max_seconds']:.1f}s"
+            )
+        check_not_silent(samples, limits["silence_rms"])
         windows = make_windows(
             samples, sr, audio["window_seconds"], audio["hop_seconds"], audio["min_seconds"]
         )

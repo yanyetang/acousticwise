@@ -51,7 +51,7 @@ class Predictor:
 
     def predict(self, wav_path: Path) -> Prediction:
         """Score each window of the file; the file's scores are the mean over its windows."""
-        audio, features = self.cfg["audio"], self.cfg["features"]
+        audio = self.cfg["audio"]
         sr = audio["sample_rate"]
         limits = self.cfg["validation"]
         # Checked before reading, so a huge upload is refused without loading it.
@@ -74,21 +74,27 @@ class Predictor:
         # The upload is valid from here on, so an error below is in the model code, not the
         # file; the app shows InferenceError as "something went wrong", with the cause kept.
         try:
-
-            def mel_of(x: np.ndarray) -> np.ndarray:
-                return log_mel(x, sr, features["n_mels"], features["n_fft"], features["hop_length"])
-
-            mels = np.stack([mel_of(w) for w in windows])
-            offsets = np.array(
-                [normalization_offset_db(w, audio["normalization"]) for w in windows]
-            )
-            probabilities = self._window_probabilities(mels, offsets).mean(axis=0)
-            scores = {c: float(p) for c, p in zip(self.classes, probabilities, strict=True)}
-            label = max(scores, key=scores.__getitem__)
-            mel = mel_of(samples)
+            scores, mel = self._classify(samples, windows)
         except Exception as err:
             raise InferenceError("The model could not classify this file.") from err
+        label = max(scores, key=scores.__getitem__)
         return Prediction(label=label, scores=scores, waveform=samples, sr=sr, mel=mel)
+
+    def _classify(
+        self, samples: np.ndarray, windows: np.ndarray
+    ) -> tuple[dict[str, float], np.ndarray]:
+        """Per-class scores, the mean over the windows, and the whole file's log-mel."""
+        audio = self.cfg["audio"]
+        mels = np.stack([self._log_mel(w) for w in windows])
+        offsets = np.array([normalization_offset_db(w, audio["normalization"]) for w in windows])
+        probabilities = self._window_probabilities(mels, offsets).mean(axis=0)
+        scores = {c: float(p) for c, p in zip(self.classes, probabilities, strict=True)}
+        return scores, self._log_mel(samples)
+
+    def _log_mel(self, samples: np.ndarray) -> np.ndarray:
+        """Log-mel with the run's settings."""
+        sr, features = self.cfg["audio"]["sample_rate"], self.cfg["features"]
+        return log_mel(samples, sr, features["n_mels"], features["n_fft"], features["hop_length"])
 
     def _window_probabilities(self, mels: np.ndarray, offsets: np.ndarray) -> np.ndarray:
         """One row per window, a probability per class in labels.json order, from the same

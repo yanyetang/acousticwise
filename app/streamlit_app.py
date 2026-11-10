@@ -11,6 +11,11 @@ FEW_VESSELS = {"rescue", "dredger", "pilotvessel"}
 PLOT_POINTS = 2000  # about a chart's width in pixels
 
 
+def plot_step(length: int) -> int:
+    """Stride that thins a series of this length to about PLOT_POINTS for display."""
+    return max(1, length // PLOT_POINTS)
+
+
 @st.cache_resource
 def load_predictor(run_dir: str) -> Predictor:
     """Load the run once per run folder, not on every rerun."""
@@ -59,10 +64,10 @@ if st.button("Classify") and uploaded is not None:
                 "one ship rather than the vessel type."
             )
 
-        step = max(1, len(prediction.waveform) // PLOT_POINTS)
-        st.line_chart(prediction.waveform[::step], x_label="Time", y_label="Amplitude")
+        waveform = prediction.waveform[:: plot_step(len(prediction.waveform))]
+        st.line_chart(waveform, x_label="Time (downsampled)", y_label="Amplitude")
 
-        mel = prediction.mel
+        mel = prediction.mel[:, :: plot_step(prediction.mel.shape[1])]
         scaled = (mel - mel.min()) / (mel.max() - mel.min())
         st.image(np.flipud(scaled), caption="Log-mel spectrogram", width="stretch")
     finally:

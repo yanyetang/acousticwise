@@ -12,3 +12,15 @@ class AudioTooShortError(InputError):
 
 class SilentAudioError(InputError):
     """Near-silent: RMS below the threshold."""
+
+
+class FileTooLargeError(InputError):
+    """Larger than the upload size limit."""
+
+
+class AudioTooLongError(InputError):
+    """Longer than the duration limit."""
+
+
+class InferenceError(Exception):
+    """Something unexpected went wrong in the model code; not the upload's fault."""

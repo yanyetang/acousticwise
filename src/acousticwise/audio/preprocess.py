@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 
 from acousticwise.audio.io import load_audio
-from acousticwise.errors import AudioTooShortError, SilentAudioError
+from acousticwise.errors import AudioTooLongError, AudioTooShortError, SilentAudioError
 
 
 def make_windows(
@@ -32,6 +32,13 @@ def check_not_silent(samples: np.ndarray, silence_rms: float) -> None:
         raise SilentAudioError(f"Audio is silent: RMS {rms:.2e} < {silence_rms:.2e}")
 
 
+def check_not_too_long(samples: np.ndarray, sr: int, max_seconds: float) -> None:
+    """Raise AudioTooLongError when samples last longer than max_seconds."""
+    seconds = len(samples) / sr
+    if seconds > max_seconds:
+        raise AudioTooLongError(f"Audio is too long: {seconds:.1f}s > {max_seconds:.1f}s")
+
+
 def preprocess_file(
     path: Path,
     sample_rate: int,
@@ -39,8 +46,13 @@ def preprocess_file(
     hop_seconds: float,
     min_seconds: float,
     silence_rms: float,
-) -> np.ndarray:
-    """Load a WAV and cut it into windows; the one path for training, caching and the app."""
+    max_seconds: float,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Load a WAV, check it and cut it into windows; the one path for uploads in the app.
+
+    Returns the samples (for display) and the windows.
+    """
     samples = load_audio(path, sample_rate)
+    check_not_too_long(samples, sample_rate, max_seconds)  # before windowing a huge file
     check_not_silent(samples, silence_rms)
-    return make_windows(samples, sample_rate, window_seconds, hop_seconds, min_seconds)
+    return samples, make_windows(samples, sample_rate, window_seconds, hop_seconds, min_seconds)

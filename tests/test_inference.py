@@ -1,3 +1,5 @@
+import json
+
 import numpy as np
 import pytest
 
@@ -5,6 +7,7 @@ from acousticwise.errors import (
     AudioTooLongError,
     AudioTooShortError,
     FileTooLargeError,
+    InferenceError,
     SilentAudioError,
     UnsupportedFileError,
 )
@@ -113,3 +116,20 @@ def test_each_invalid_upload_raises_its_typed_error(baseline_inputs, tmp_path, w
 
     with pytest.raises(error):
         Predictor.load(run_dir).predict(make_file(tmp_path, write_wav))
+
+
+def test_an_unexpected_model_error_becomes_an_inference_error(baseline_inputs, tmp_path, write_wav):
+    cfg, _ = baseline_inputs
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+    # A broken run: the model was trained on 20 MFCCs, the config now says 13, so the
+    # model gets the wrong number of features and scikit-learn raises a ValueError.
+    record = json.loads((run_dir / "config.json").read_text())
+    record["config"]["features"]["n_mfcc"] = 13
+    (run_dir / "config.json").write_text(json.dumps(record))
+    wav = write_wav(tone(5.0, 32000, freq=FREQS["tug"], amplitude=0.2), 32000, name="upload.wav")
+
+    with pytest.raises(InferenceError) as excinfo:
+        Predictor.load(run_dir).predict(wav)
+
+    assert isinstance(excinfo.value.__cause__, ValueError)  # the original kept for debugging

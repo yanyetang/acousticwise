@@ -20,3 +20,7 @@ class FileTooLargeError(InputError):
 
 class AudioTooLongError(InputError):
     """Longer than the duration limit."""
+
+
+class InferenceError(Exception):
+    """Something unexpected went wrong in the model code; not the upload's fault."""

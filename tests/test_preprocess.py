@@ -37,12 +37,29 @@ def test_long_clip_is_cut_into_overlapping_windows():
     np.testing.assert_array_equal(windows[2], samples[160000:320000])
 
 
+def test_long_clip_is_not_padded_into_an_extra_window():
+    # One sample short of a second window: 7.5 s would fit windows at 0 and 2.5 s. Padding a
+    # long clip by even one zero would add that second window, ending in silence.
+    samples = tone(7.5, 32000)[:-1]
+
+    windows = make_windows(samples, sr=32000, window_seconds=5.0, hop_seconds=2.5, min_seconds=4.0)
+
+    assert windows.shape == (1, 160000)
+
+
 def test_silent_clip_raises_silent_audio():
     # Near-silent: RMS (loudness) 1e-5 is below the 1e-4 threshold from the config.
     samples = np.full(160000, 1e-5, dtype=np.float32)
 
     with pytest.raises(SilentAudioError):
         check_not_silent(samples, silence_rms=1.0e-4)
+
+
+def test_clip_exactly_at_the_silence_threshold_is_not_silent():
+    # RMS of a constant 0.5 is exactly 0.5: only audio below the threshold is silent.
+    samples = np.full(160000, 0.5, dtype=np.float32)
+
+    check_not_silent(samples, silence_rms=0.5)  # no error
 
 
 def test_preprocess_file_loads_checks_and_windows_a_wav(write_wav):

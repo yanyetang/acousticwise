@@ -1,6 +1,13 @@
 import numpy as np
 import pytest
 
+from acousticwise.errors import (
+    AudioTooLongError,
+    AudioTooShortError,
+    FileTooLargeError,
+    SilentAudioError,
+    UnsupportedFileError,
+)
 from acousticwise.inference import Predictor
 from acousticwise.train import train_baseline, train_cnn
 from tests.conftest import FREQS, tone
@@ -63,3 +70,46 @@ def test_a_long_file_scores_the_mean_of_its_windows(baseline_inputs, tmp_path, w
     for label in long_scores:
         expected = np.mean([s[label] for s in window_scores])
         assert long_scores[label] == pytest.approx(expected, abs=1e-6)
+
+
+def _not_a_wav(tmp_path, write_wav):
+    path = tmp_path / "notes.wav"
+    path.write_bytes(b"this is not audio")
+    return path
+
+
+# One case per row of the design's error table. The run is trained with small limits
+# (1 MB, 12 s), so each case stays small: 32 kHz 32-bit audio is 128 kB per second.
+ERROR_CASES = {
+    "unreadable": (_not_a_wav, UnsupportedFileError),
+    "too large": (  # 10 s at 32 kHz, 32-bit: 1.28 MB, under the duration limit
+        lambda tmp_path, write_wav: write_wav(tone(10.0, 32000), 32000, name="big.wav"),
+        FileTooLargeError,
+    ),
+    "too short": (
+        lambda tmp_path, write_wav: write_wav(tone(3.9, 32000), 32000, name="short.wav"),
+        AudioTooShortError,
+    ),
+    "too long": (  # 13 s at 8 kHz, 16-bit: 208 kB, under the size limit
+        lambda tmp_path, write_wav: write_wav(
+            tone(13.0, 8000), 8000, name="long.wav", subtype="PCM_16"
+        ),
+        AudioTooLongError,
+    ),
+    "silent": (
+        lambda tmp_path, write_wav: write_wav(np.zeros(5 * 32000, "float32"), 32000),
+        SilentAudioError,
+    ),
+}
+
+
+@pytest.mark.parametrize("case", list(ERROR_CASES))
+def test_each_invalid_upload_raises_its_typed_error(baseline_inputs, tmp_path, write_wav, case):
+    cfg, _ = baseline_inputs
+    cfg["validation"].update(max_file_mb=1, max_seconds=12)  # saved in the run's config.json
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+    make_file, error = ERROR_CASES[case]
+
+    with pytest.raises(error):
+        Predictor.load(run_dir).predict(make_file(tmp_path, write_wav))

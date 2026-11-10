@@ -2,11 +2,13 @@ import os
 import tempfile
 from pathlib import Path
 
+import numpy as np
 import streamlit as st
 
 from acousticwise.inference import InferenceError, InputError, Predictor
 
 FEW_VESSELS = {"rescue", "dredger", "pilotvessel"}
+PLOT_POINTS = 2000  # about a chart's width in pixels
 
 
 @st.cache_resource
@@ -42,5 +44,12 @@ if st.button("Classify") and uploaded is not None:
                 "This class had few vessels in training, so the result may reflect "
                 "one ship rather than the vessel type."
             )
+
+        step = max(1, len(prediction.waveform) // PLOT_POINTS)
+        st.line_chart(prediction.waveform[::step], x_label="Time", y_label="Amplitude")
+
+        mel = prediction.mel
+        scaled = (mel - mel.min()) / (mel.max() - mel.min())
+        st.image(np.flipud(scaled), caption="Log-mel spectrogram", width="stretch")
     finally:
         tmp_path.unlink()

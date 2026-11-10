@@ -85,6 +85,23 @@ def test_a_few_vessels_class_on_top_adds_a_note(run_dir, write_wav, monkeypatch,
     assert "few vessels" in page_text(at).lower()
 
 
+def test_a_long_upload_is_classified_on_its_first_seconds_with_a_note(
+    baseline_inputs, tmp_path, write_wav, monkeypatch
+):
+    cfg, _ = baseline_inputs
+    cfg["validation"]["max_seconds"] = 6
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+
+    at = classify(run_dir, wav_bytes(write_wav, tone(8.0, 32000, FREQS["tug"])), monkeypatch)
+
+    assert not at.exception
+    assert not at.error
+    text = page_text(at)
+    assert "tug" in text
+    assert "first 6" in text.lower()
+
+
 INVALID_UPLOADS = {
     "unreadable": lambda write_wav: b"this is not audio",
     "silent": lambda write_wav: wav_bytes(write_wav, np.zeros(5 * 32000, "float32")),

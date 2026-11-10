@@ -24,6 +24,7 @@ class Prediction:
     waveform: np.ndarray  # for display
     sr: int
     mel: np.ndarray  # for display
+    trimmed: bool = False  # True when only the first max_seconds were classified
 
 
 class Predictor:

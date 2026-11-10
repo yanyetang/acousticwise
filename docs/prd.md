@@ -70,7 +70,7 @@ The dataset reviews behind these decisions are kept as local research notes and 
 - **A1.** Upload a WAV and submit it for inference.
 - **A2.** Display the predicted class, per-class confidence (labeled "model confidence") and a waveform or spectrogram. The app states that the model was trained on one hydrophone network. All 12 classes are shown; if the top prediction is rescue, dredger or pilotvessel, the app adds a note that the class has few vessels in training and may reflect one ship rather than the type.
 - **A3.** Handle unsupported files, silence, too-short audio and inference failures with clear messages. The app never shows a stack trace.
-- **A4.** Supported input: PCM WAV, mono or stereo, at least 16-bit, within a maximum file size and minimum/maximum duration. Exact limits are set after D3.
+- **A4.** Supported input: PCM WAV, mono or stereo, at least 16-bit, within a maximum file size and a minimum duration; longer audio than the maximum duration is classified on its first part, with a note. Exact limits are set after D3.
 
 **Engineering and delivery**
 - **E1.** Data preparation, training, evaluation and inference are separate, reusable modules.

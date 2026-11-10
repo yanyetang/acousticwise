@@ -7,9 +7,8 @@ import numpy as np
 import torch
 
 from acousticwise.audio.features import log_mel, normalization_offset_db
-from acousticwise.audio.io import load_audio
-from acousticwise.audio.preprocess import check_not_silent, make_windows
-from acousticwise.errors import AudioTooLongError, FileTooLargeError, InferenceError
+from acousticwise.audio.preprocess import preprocess_file
+from acousticwise.errors import FileTooLargeError, InferenceError
 from acousticwise.models.baseline import mfcc_features
 from acousticwise.models.cnn import ConvNet, standardize
 
@@ -62,15 +61,14 @@ class Predictor:
             raise FileTooLargeError(
                 f"File is too large: {size_mb:.1f} MB > {limits['max_file_mb']} MB"
             )
-        samples = load_audio(wav_path, sr)
-        seconds = len(samples) / sr
-        if seconds > limits["max_seconds"]:
-            raise AudioTooLongError(
-                f"Audio is too long: {seconds:.1f}s > {limits['max_seconds']:.1f}s"
-            )
-        check_not_silent(samples, limits["silence_rms"])
-        windows = make_windows(
-            samples, sr, audio["window_seconds"], audio["hop_seconds"], audio["min_seconds"]
+        samples, windows = preprocess_file(
+            wav_path,
+            sr,
+            audio["window_seconds"],
+            audio["hop_seconds"],
+            audio["min_seconds"],
+            limits["silence_rms"],
+            limits["max_seconds"],
         )
 
         # The upload is valid from here on, so an error below is in the model code, not the

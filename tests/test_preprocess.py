@@ -45,6 +45,13 @@ def test_silent_clip_raises_silent_audio():
         check_not_silent(samples, silence_rms=1.0e-4)
 
 
+def test_clip_exactly_at_the_silence_threshold_is_not_silent():
+    # RMS of a constant 0.5 is exactly 0.5: only audio below the threshold is silent.
+    samples = np.full(160000, 0.5, dtype=np.float32)
+
+    check_not_silent(samples, silence_rms=0.5)  # no error
+
+
 def test_preprocess_file_loads_checks_and_windows_a_wav(write_wav):
     # One call does the whole path: 12 s stereo at 48 kHz becomes three 5 s mono
     # windows at 32 kHz, the same shape as in the 12 s windowing test above.

@@ -118,6 +118,28 @@ def test_each_invalid_upload_raises_its_typed_error(baseline_inputs, tmp_path, w
         Predictor.load(run_dir).predict(make_file(tmp_path, write_wav))
 
 
+def test_a_file_exactly_at_the_size_limit_is_classified(baseline_inputs, tmp_path, write_wav):
+    cfg, _ = baseline_inputs
+    wav = write_wav(tone(5.0, 32000, freq=FREQS["tug"], amplitude=0.2), 32000, name="upload.wav")
+    # The limit is this file's own size; MB as Streamlit counts its upload cap.
+    cfg["validation"]["max_file_mb"] = wav.stat().st_size / (1024 * 1024)
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+
+    assert Predictor.load(run_dir).predict(wav).label == "tug"
+
+
+def test_audio_exactly_at_the_duration_limit_is_classified(baseline_inputs, tmp_path, write_wav):
+    cfg, _ = baseline_inputs
+    cfg["validation"]["max_seconds"] = 12
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+    # 12 s at the run's own 32 kHz: 384000 samples, so no resampling rounds the length.
+    wav = write_wav(tone(12.0, 32000, freq=FREQS["tug"], amplitude=0.2), 32000, name="upload.wav")
+
+    assert Predictor.load(run_dir).predict(wav).label == "tug"
+
+
 def test_an_unexpected_model_error_becomes_an_inference_error(baseline_inputs, tmp_path, write_wav):
     cfg, _ = baseline_inputs
     run_dir = tmp_path / "run"
@@ -133,3 +155,19 @@ def test_an_unexpected_model_error_becomes_an_inference_error(baseline_inputs, t
         Predictor.load(run_dir).predict(wav)
 
     assert isinstance(excinfo.value.__cause__, ValueError)  # the original kept for debugging
+
+
+def test_labels_that_do_not_match_the_model_raise_an_inference_error(
+    baseline_inputs, tmp_path, write_wav
+):
+    cfg, _ = baseline_inputs
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+    # A broken run: labels.json lists a third class, but the model scores only two.
+    (run_dir / "labels.json").write_text(json.dumps(["cargo", "tug", "pilotvessel"]))
+    wav = write_wav(tone(5.0, 32000, freq=FREQS["tug"], amplitude=0.2), 32000, name="upload.wav")
+
+    with pytest.raises(InferenceError) as excinfo:
+        Predictor.load(run_dir).predict(wav)
+
+    assert isinstance(excinfo.value.__cause__, ValueError)  # not scores with a class missing

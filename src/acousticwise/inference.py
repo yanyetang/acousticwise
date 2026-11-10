@@ -99,7 +99,7 @@ class Predictor:
     def _window_probabilities(self, mels: np.ndarray, offsets: np.ndarray) -> np.ndarray:
         """One row per window, a probability per class in labels.json order, from the same
         inputs the model was trained on."""
-        if self.input_scaling is not None:  # CNN: shifted log-mels, scaled like training
+        if isinstance(self.model, ConvNet):  # CNN or CRNN: shifted log-mels, scaled like training
             x = (mels + offsets[:, None, None]).astype(np.float32)
             x = standardize(x, self.input_scaling)
             with torch.no_grad():

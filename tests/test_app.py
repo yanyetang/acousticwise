@@ -74,9 +74,10 @@ def test_a_valid_upload_shows_the_predicted_class_and_model_confidence(
     assert "few vessels" not in text.lower()  # tug has many training vessels
 
 
-def test_a_few_vessels_class_on_top_adds_a_note(run_dir, write_wav, monkeypatch):
-    # Rename the run's "tug" class to "rescue", one of the classes with few training vessels.
-    (run_dir / "labels.json").write_text(json.dumps(["cargo", "rescue"]))
+@pytest.mark.parametrize("few", ["rescue", "dredger", "pilotvessel"])  # PRD A2
+def test_a_few_vessels_class_on_top_adds_a_note(run_dir, write_wav, monkeypatch, few):
+    # Rename the run's "tug" class to one of the classes with few training vessels.
+    (run_dir / "labels.json").write_text(json.dumps(["cargo", few]))
 
     at = classify(run_dir, wav_bytes(write_wav, tone(5.0, 32000, FREQS["tug"])), monkeypatch)
 
@@ -114,3 +115,28 @@ def test_a_model_failure_shows_a_friendly_banner_without_internals(run_dir, writ
     assert not at.exception
     assert len(at.error) == 1
     assert "StandardScaler" not in page_text(at)  # scikit-learn's message stays in the log
+
+
+def open_app(monkeypatch, run_dir: str | None) -> AppTest:
+    """Open the app with ACOUSTICWISE_RUN_DIR set to run_dir, or unset when None."""
+    if run_dir is None:
+        monkeypatch.delenv("ACOUSTICWISE_RUN_DIR", raising=False)
+    else:
+        monkeypatch.setenv("ACOUSTICWISE_RUN_DIR", run_dir)
+    at = AppTest.from_file(str(APP), default_timeout=30)
+    return at.run()
+
+
+def test_the_app_without_a_run_dir_shows_an_error_banner_not_a_traceback(monkeypatch):
+    at = open_app(monkeypatch, None)
+
+    assert not at.exception
+    assert len(at.error) == 1
+
+
+def test_a_missing_run_folder_shows_an_error_banner_not_a_traceback(monkeypatch, tmp_path):
+    at = open_app(monkeypatch, str(tmp_path / "no-such-run"))
+
+    assert not at.exception
+    assert len(at.error) == 1
+    assert "no-such-run" in at.error[0].value

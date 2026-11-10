@@ -132,7 +132,7 @@ artifacts/runs/<run_id>/       # e.g. baseline_fold1_svm_20261024-142300
 class Predictor:
     @classmethod
     def load(cls, run_dir: Path) -> "Predictor": ...
-    def predict(self, wav_path_or_bytes) -> Prediction: ...
+    def predict(self, wav_path: Path) -> Prediction: ...
 
 @dataclass
 class Prediction:
@@ -143,9 +143,9 @@ class Prediction:
     mel: np.ndarray              # for display
 ```
 
-`predict` windows the file, scores each window, and returns the mean softmax across windows.
+`predict` windows the file, scores each window, and returns the mean softmax across windows. `load` reads only the run directory (`config.json`, `labels.json`, the model), never the feature cache, so the app runs without the dataset. The app saves an upload to a temporary file and passes its path, so the size check can read the file size before decoding.
 
-**Validation (`audio/io.py`)** raises typed errors from `errors.py`; the UI maps each to a friendly message and never shows a traceback:
+**Validation** raises typed errors from `errors.py`: the size check in `Predictor.predict`, before the file is read; the rest in `preprocess_file` (`audio/preprocess.py`), the app's one path from file to windows. The UI maps each to a friendly message and never shows a traceback:
 
 | Condition | Error |
 |---|---|

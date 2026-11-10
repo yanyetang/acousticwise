@@ -35,10 +35,8 @@ acousticwise/
     inference.py           # Predictor: the only API the app uses
     errors.py              # typed input/inference errors
   app/streamlit_app.py     # UI only; no ML logic
-  app/samples/             # 36 sample clips (3 per class) and manifest.csv, for the sample browser
   scripts/download_data.py # prints access instructions, verifies a user-supplied directory
   scripts/cache_features.py# builds the feature cache (runs on Kaggle or locally)
-  scripts/export_samples.py# picks the sample clips and writes their manifest (runs on Kaggle with the bundle)
   tests/
   artifacts/               # saved models and manifests (see section 5)
 ```
@@ -204,6 +202,6 @@ A second dataset needs its own `DatasetLoader`, a coarse label mapping defined i
 2. **Local:** download only the caches and the manifest (about 3.5 GB) to `data/cache/` (git-ignored). Train, evaluate and run the app locally on the laptop; device auto-selection uses mps.
 3. **Plain path** (README): download the bundle, run `scripts/download_data.py` to verify it, run `cache_features.py` locally. Needs about 44 GB free before the zip is deleted.
 
-Kaggle's `/tmp` is wiped when a session ends, so step 1 is rerun from the zip if needed; `cache_features.py` is idempotent. Unzipped copies of the audio are not kept on Kaggle: the extraction (about 30 minutes) is paid once per run, and runs are batched (cache build and sample export together) to limit repeats.
+Kaggle's `/tmp` is wiped when a session ends, so step 1 is rerun from the zip if needed; `cache_features.py` is idempotent. Unzipped copies of the audio are not kept on Kaggle: the extraction (about 30 minutes) is paid once per run, and runs are batched to limit repeats.
 
-**Development data.** Code and tests run on the laptop against synthetic fixtures (generated WAVs and CSVs shaped like the bundle) and the 36 sample clips in `app/samples/`. The baseline is trained locally on the full cache, not on the sample. The CNN and CRNN are trained on Kaggle (one epoch took 95 s and 9 GB of memory on the laptop): `notebooks/spectrogram_grid/upload_src.sh` uploads the last commit's code, its commit id and the split manifest as a private dataset, and `notebooks/cnn_train/` runs the training command line for every fold on a GPU with the cache dataset attached, then writes a `checksums.txt` of the run files. The runs are downloaded, checked against it and evaluated on the laptop with `--cache-dir` (section 8).
+**Development data.** Code and tests run on the laptop against synthetic fixtures (generated WAVs and CSVs shaped like the bundle). The baseline is trained locally on the full cache. The CNN and CRNN are trained on Kaggle (one epoch took 95 s and 9 GB of memory on the laptop): `notebooks/spectrogram_grid/upload_src.sh` uploads the last commit's code, its commit id and the split manifest as a private dataset, and `notebooks/cnn_train/` runs the training command line for every fold on a GPU with the cache dataset attached, then writes a `checksums.txt` of the run files. The runs are downloaded, checked against it and evaluated on the laptop with `--cache-dir` (section 8).

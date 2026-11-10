@@ -141,6 +141,7 @@ class Prediction:
     waveform: np.ndarray         # for display
     sr: int
     mel: np.ndarray              # for display
+    trimmed: bool                # only the first max_seconds were classified
 ```
 
 `predict` windows the file, scores each window, and returns the mean softmax across windows. `load` reads only the run directory (`config.json`, `labels.json`, the model), never the feature cache, so the app runs without the dataset. The app saves an upload to a temporary file and passes its path, so the size check can read the file size before decoding.
@@ -152,11 +153,10 @@ class Prediction:
 | Not a readable PCM WAV, or corrupt | `UnsupportedFileError` |
 | File larger than limit | `FileTooLargeError` |
 | Shorter than 4.0 s | `AudioTooShortError` |
-| Longer than the duration limit | `AudioTooLongError` |
 | Near-silent (RMS below a threshold) | `SilentAudioError` |
 | Anything unexpected in model code | wrapped as `InferenceError` |
 
-Limits, set from D3: at most 200 MB (Streamlit's default upload cap) and 300 s (60 windows); silence below RMS 1e-4 (−80 dBFS), 29 dB below the quietest clip in the dataset (−51 dBFS).
+Limits, set from D3: at most 200 MB (Streamlit's default upload cap); audio longer than 300 s (60 windows) is not rejected but classified on its first 300 s, and the app says so; silence below RMS 1e-4 (−80 dBFS), 29 dB below the quietest clip in the dataset (−51 dBFS).
 
 ## 7. Application
 

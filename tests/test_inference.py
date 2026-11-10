@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 
 from acousticwise.errors import (
-    AudioTooLongError,
     AudioTooShortError,
     FileTooLargeError,
     InferenceError,
@@ -93,12 +92,6 @@ ERROR_CASES = {
         lambda tmp_path, write_wav: write_wav(tone(3.9, 32000), 32000, name="short.wav"),
         AudioTooShortError,
     ),
-    "too long": (  # 13 s at 8 kHz, 16-bit: 208 kB, under the size limit
-        lambda tmp_path, write_wav: write_wav(
-            tone(13.0, 8000), 8000, name="long.wav", subtype="PCM_16"
-        ),
-        AudioTooLongError,
-    ),
     "silent": (
         lambda tmp_path, write_wav: write_wav(np.zeros(5 * 32000, "float32"), 32000),
         SilentAudioError,
@@ -137,7 +130,29 @@ def test_audio_exactly_at_the_duration_limit_is_classified(baseline_inputs, tmp_
     # 12 s at the run's own 32 kHz: 384000 samples, so no resampling rounds the length.
     wav = write_wav(tone(12.0, 32000, freq=FREQS["tug"], amplitude=0.2), 32000, name="upload.wav")
 
-    assert Predictor.load(run_dir).predict(wav).label == "tug"
+    prediction = Predictor.load(run_dir).predict(wav)
+
+    assert prediction.label == "tug"
+    assert not prediction.trimmed
+
+
+def test_audio_over_the_duration_limit_is_classified_on_its_first_max_seconds(
+    baseline_inputs, tmp_path, write_wav
+):
+    cfg, _ = baseline_inputs
+    cfg["validation"]["max_seconds"] = 12
+    run_dir = tmp_path / "run"
+    train_baseline(cfg, fold=1, run_dir=run_dir)
+    # 12 s of tug, then 30 s of cargo: scored whole, the cargo windows would outvote the tug.
+    tug = tone(12.0, 32000, freq=FREQS["tug"], amplitude=0.2)
+    cargo = tone(30.0, 32000, freq=FREQS["cargo"], amplitude=0.2)
+    wav = write_wav(np.concatenate([tug, cargo]), 32000, name="upload.wav")
+
+    prediction = Predictor.load(run_dir).predict(wav)
+
+    assert prediction.label == "tug"
+    assert prediction.trimmed
+    assert len(prediction.waveform) == 12 * 32000  # the plots show what was classified
 
 
 def test_an_unexpected_model_error_becomes_an_inference_error(baseline_inputs, tmp_path, write_wav):

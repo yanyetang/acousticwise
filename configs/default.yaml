@@ -9,6 +9,7 @@ data:
   splits_path: artifacts/splits.json
   app_fold: 1                        # the fold whose model ships in the app
   runs_dir: artifacts/runs           # one folder per trained model
+  app_run_dir: artifacts/runs/r1-rms/baseline_fold1_random_forest_20261024-224314  # what `acousticwise-app` loads
 
 audio:
   sample_rate: 32000                 # native rate; Nyquist 16 kHz (ticket 03)

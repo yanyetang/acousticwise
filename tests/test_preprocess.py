@@ -67,7 +67,7 @@ def test_preprocess_file_loads_checks_and_windows_a_wav(write_wav):
     # windows at 32 kHz, the same shape as in the 12 s windowing test above.
     path = write_wav(tone(12.0, 48000, channels=2), 48000)
 
-    samples, windows = preprocess_file(
+    samples, windows, trimmed = preprocess_file(
         path,
         sample_rate=32000,
         window_seconds=5.0,
@@ -78,5 +78,6 @@ def test_preprocess_file_loads_checks_and_windows_a_wav(write_wav):
     )
 
     assert samples.shape == (12 * 32000,)  # the whole file, mono at 32 kHz, for display
+    assert not trimmed
     assert windows.dtype == np.float32
     assert windows.shape == (3, 160000)

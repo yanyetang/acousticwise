@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 
 from acousticwise.audio.io import load_audio
-from acousticwise.errors import AudioTooLongError, AudioTooShortError, SilentAudioError
+from acousticwise.errors import AudioTooShortError, SilentAudioError
 
 
 def make_windows(
@@ -31,11 +31,10 @@ def check_not_silent(samples: np.ndarray, silence_rms: float) -> None:
         raise SilentAudioError(f"Audio is silent: RMS {rms:.2e} < {silence_rms:.2e}")
 
 
-def check_not_too_long(samples: np.ndarray, sr: int, max_seconds: float) -> None:
-    """Raise AudioTooLongError when samples last longer than max_seconds."""
-    seconds = len(samples) / sr
-    if seconds > max_seconds:
-        raise AudioTooLongError(f"Audio is too long: {seconds:.1f}s > {max_seconds:.1f}s")
+def trim_to_max(samples: np.ndarray, sr: int, max_seconds: float) -> tuple[np.ndarray, bool]:
+    """Keep the first max_seconds of samples; also say whether anything was cut."""
+    max_length = int(round(max_seconds * sr))
+    return samples[:max_length], len(samples) > max_length
 
 
 def preprocess_file(
@@ -46,12 +45,14 @@ def preprocess_file(
     min_seconds: float,
     silence_rms: float,
     max_seconds: float,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray, bool]:
     """Load a WAV, check it and cut it into windows; the one path for uploads in the app.
 
-    Returns the samples (for display) and the windows.
+    Audio longer than max_seconds is classified on its first max_seconds.
+    Returns the samples (for display), the windows, and whether the audio was trimmed.
     """
     samples = load_audio(path, sample_rate)
-    check_not_too_long(samples, sample_rate, max_seconds)  # before windowing a huge file
+    samples, trimmed = trim_to_max(samples, sample_rate, max_seconds)  # before windowing
     check_not_silent(samples, silence_rms)
-    return samples, make_windows(samples, sample_rate, window_seconds, hop_seconds, min_seconds)
+    windows = make_windows(samples, sample_rate, window_seconds, hop_seconds, min_seconds)
+    return samples, windows, trimmed

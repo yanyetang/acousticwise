@@ -47,6 +47,12 @@ if st.button("Classify") and uploaded is not None:
             "The model was trained on recordings from one hydrophone network; "
             "recordings from other places may score differently."
         )
+        if prediction.trimmed:
+            seconds = len(prediction.waveform) / prediction.sr
+            st.info(
+                f"The recording is longer than the limit: only its first {seconds:.0f} s "
+                "were classified."
+            )
         if prediction.label in FEW_VESSELS:
             st.warning(
                 "This class had few vessels in training, so the result may reflect "

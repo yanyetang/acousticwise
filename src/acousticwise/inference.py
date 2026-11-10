@@ -64,7 +64,7 @@ class Predictor:
             raise FileTooLargeError(
                 f"File is too large: {size_mb:.1f} MB > {limits['max_file_mb']} MB"
             )
-        samples, windows = preprocess_file(
+        samples, windows, trimmed = preprocess_file(
             wav_path,
             sr,
             audio["window_seconds"],
@@ -81,7 +81,9 @@ class Predictor:
         except Exception as err:
             raise InferenceError("The model could not classify this file.") from err
         label = max(scores, key=scores.__getitem__)
-        return Prediction(label=label, scores=scores, waveform=samples, sr=sr, mel=mel)
+        return Prediction(
+            label=label, scores=scores, waveform=samples, sr=sr, mel=mel, trimmed=trimmed
+        )
 
     def _classify(
         self, samples: np.ndarray, windows: np.ndarray

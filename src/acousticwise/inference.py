@@ -9,7 +9,7 @@ import torch
 from acousticwise.audio.features import log_mel, normalization_offset_db
 from acousticwise.audio.io import load_audio
 from acousticwise.audio.preprocess import check_not_silent, make_windows
-from acousticwise.errors import AudioTooLongError, FileTooLargeError
+from acousticwise.errors import AudioTooLongError, FileTooLargeError, InferenceError
 from acousticwise.models.baseline import mfcc_features
 from acousticwise.models.cnn import ConvNet, standardize
 
@@ -73,15 +73,24 @@ class Predictor:
             samples, sr, audio["window_seconds"], audio["hop_seconds"], audio["min_seconds"]
         )
 
-        def mel_of(x: np.ndarray) -> np.ndarray:
-            return log_mel(x, sr, features["n_mels"], features["n_fft"], features["hop_length"])
+        # The upload is valid from here on, so an error below is in the model code, not the
+        # file; the app shows InferenceError as "something went wrong", with the cause kept.
+        try:
 
-        mels = np.stack([mel_of(w) for w in windows])
-        offsets = np.array([normalization_offset_db(w, audio["normalization"]) for w in windows])
-        probabilities = self._window_probabilities(mels, offsets).mean(axis=0)
-        scores = {c: float(p) for c, p in zip(self.classes, probabilities, strict=True)}
-        label = max(scores, key=scores.__getitem__)
-        return Prediction(label=label, scores=scores, waveform=samples, sr=sr, mel=mel_of(samples))
+            def mel_of(x: np.ndarray) -> np.ndarray:
+                return log_mel(x, sr, features["n_mels"], features["n_fft"], features["hop_length"])
+
+            mels = np.stack([mel_of(w) for w in windows])
+            offsets = np.array(
+                [normalization_offset_db(w, audio["normalization"]) for w in windows]
+            )
+            probabilities = self._window_probabilities(mels, offsets).mean(axis=0)
+            scores = {c: float(p) for c, p in zip(self.classes, probabilities, strict=True)}
+            label = max(scores, key=scores.__getitem__)
+            mel = mel_of(samples)
+        except Exception as err:
+            raise InferenceError("The model could not classify this file.") from err
+        return Prediction(label=label, scores=scores, waveform=samples, sr=sr, mel=mel)
 
     def _window_probabilities(self, mels: np.ndarray, offsets: np.ndarray) -> np.ndarray:
         """One row per window, a probability per class in labels.json order, from the same

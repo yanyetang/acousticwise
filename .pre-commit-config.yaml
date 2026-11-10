@@ -1,5 +1,5 @@
 # Runs on every `git commit`. Set up once per clone: uv run pre-commit install
-# The hooks use the project's own ruff (from uv.lock), so they match CI.
+# The ruff hooks use the project's own ruff (from uv.lock), so they match CI.
 repos:
   - repo: local
     hooks:
@@ -15,3 +15,9 @@ repos:
         language: system
         types_or: [python, pyi]
         exclude: ^(notebooks|docs)/
+  # Refuses a commit whose staged changes hold a secret. pre-commit builds gitleaks
+  # itself on the first run, so a new clone needs nothing beyond the install above.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks

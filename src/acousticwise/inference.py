@@ -8,9 +8,11 @@ import torch
 
 from acousticwise.audio.features import log_mel, normalization_offset_db
 from acousticwise.audio.preprocess import preprocess_file
-from acousticwise.errors import FileTooLargeError, InferenceError
+from acousticwise.errors import FileTooLargeError, InferenceError, InputError
 from acousticwise.models.baseline import mfcc_features
 from acousticwise.models.cnn import ConvNet, standardize
+
+__all__ = ["InferenceError", "InputError", "Prediction", "Predictor"]
 
 
 @dataclass

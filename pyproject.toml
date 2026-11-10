@@ -16,6 +16,9 @@ dependencies = [
     "torch>=2.14.1",
 ]
 
+[project.scripts]
+acousticwise-app = "acousticwise.launch:main"
+
 [dependency-groups]
 dev = [
     "matplotlib>=3.11.2",

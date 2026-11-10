@@ -8,6 +8,7 @@ import pytest
 import yaml
 
 from acousticwise.inference import Predictor
+from acousticwise.train import train_cnn
 from tests.conftest import FREQS, tone
 
 
@@ -36,3 +37,26 @@ def test_a_fresh_run_trains_evaluates_and_classifies_in_the_app(
     assert test["clips"] == 2 * len(FREQS)  # every fixture test clip was scored
     assert set(prediction.scores) == set(FREQS)
     assert sum(prediction.scores.values()) == pytest.approx(1.0)
+
+
+def losses(cfg: dict, run_dir) -> list[float]:
+    """Train a CNN run and return its training loss per epoch, as saved in metrics.json."""
+    train_cnn(cfg, fold=1, run_dir=run_dir)
+    history = json.loads((run_dir / "metrics.json").read_text())["validation"]["history"]
+    return [epoch["loss"] for epoch in history]
+
+
+@pytest.mark.parametrize("time_pooling", ["mean", "lstm"])  # CNN, CRNN
+def test_the_same_seed_twice_gives_the_same_training_losses(
+    baseline_inputs, tmp_path, time_pooling
+):
+    cfg, _ = baseline_inputs
+    cfg["cnn"].update(time_pooling=time_pooling, epochs=3, batch_size=4)
+
+    first = losses(cfg, tmp_path / "first")
+    second = losses(cfg, tmp_path / "second")
+    cfg["seed"] += 1
+    other = losses(cfg, tmp_path / "other")
+
+    assert first == second  # exactly, not approximately: same seed, same run
+    assert first != other  # and the seed is what decides it

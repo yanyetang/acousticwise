@@ -13,10 +13,11 @@ git clone https://github.com/yanyetang/acousticwise.git && cd acousticwise
 uv sync
 curl -L -o artifacts/runs/r2-cnn/cnn_fold1_20261025-145517/model.pt \
   https://github.com/yanyetang/acousticwise/releases/download/v1.0/model.pt
+echo "4b073b8921d13968e65a62ddb98139bf85afd3ce135ef3ceb2d592163d7bc54d  artifacts/runs/r2-cnn/cnn_fold1_20261025-145517/model.pt" | shasum -a 256 -c
 uv run acousticwise-app
 ```
 
-The model is the CNN trained on fold 1 (1 MB, SHA-256 `4b073b89…7bc54d`). Upload a WAV of at least 4 s; audio over 300 s is classified on its first 300 s. Set `ACOUSTICWISE_RUN_DIR` to serve another run.
+The model is the CNN trained on fold 1 (1 MB; the `shasum` line checks the download). Upload a WAV of at least 4 s; audio over 300 s is classified on its first 300 s. Set `ACOUSTICWISE_RUN_DIR` to serve another run.
 
 ![A too-short upload gets a clear message](docs/images/app-error.png)
 
@@ -58,10 +59,14 @@ The CNN wins on all five folds; chance is about 0.11. Details: [`docs/results.md
 - **Tier 1, no data:** `uv run pytest` (includes an end-to-end run on synthetic audio).
 - **Tier 2, with data:** retraining matches the reported scores within ±1 point (baseline) and ±2 (CNN); checked in [`docs/results.md`](docs/results.md).
 
-Data: download the bundle from [uniqueshipdata.org](https://uniqueshipdata.org/) (44 GB free needed: 18 GB zipped, 26 GB unzipped), or build the cache on Kaggle (technical design, section 12). Then:
+Data: download the bundle from [uniqueshipdata.org](https://uniqueshipdata.org/) (about 62 GB free while unzipping: 18 GB of zip parts, an 18 GB joined copy and 26 GB unzipped; 26 GB once the zips are deleted), or build the cache on Kaggle (technical design, section 12). Then:
 
 ```
-uv run python scripts/cache_features.py      # skip if the cache came from Kaggle
+# Plain path only: join the two zip parts, unzip to data/uniqueship/, build the cache
+zip -s 0 allclass_5hours.zip --out joined.zip && unzip -q joined.zip -d data/ && rm joined.zip
+mv data/allclass_5hours data/uniqueship
+uv run python scripts/cache_features.py
+# Both paths
 uv run python scripts/build_manifest.py
 uv run python -m acousticwise.train --fold 1 --model cnn
 uv run python -m acousticwise.evaluate artifacts/runs/<run>

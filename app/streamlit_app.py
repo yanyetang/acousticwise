@@ -29,7 +29,10 @@ if run_dir is None:
 try:
     predictor = load_predictor(run_dir)
 except FileNotFoundError:
-    st.error(f"No trained model found in {run_dir}. Train one, or set ACOUSTICWISE_RUN_DIR.")
+    st.error(
+        f"No trained model found in {run_dir}. Download the model weights from the v1.0 "
+        "release (see the README), or set ACOUSTICWISE_RUN_DIR to a run you trained."
+    )
     st.stop()
 
 st.title("AcousticWise")

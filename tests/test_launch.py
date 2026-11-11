@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -45,3 +46,17 @@ def test_a_run_dir_already_set_wins_over_the_config(monkeypatch, streamlit_env, 
     env = streamlit_env()
 
     assert env.get("ACOUSTICWISE_RUN_DIR") == str(tmp_path)
+
+
+def test_the_configured_run_is_a_committed_cnn_run():
+    cfg = yaml.safe_load((REPO / "configs" / "default.yaml").read_text())
+    run = REPO / cfg["data"]["app_run_dir"]
+
+    record = json.loads((run / "config.json").read_text())
+    metrics = json.loads((run / "metrics.json").read_text())
+
+    # Run folders are named by kind (technical design, section 5); mean pooling is the CNN.
+    assert run.name.startswith("cnn_fold")
+    assert record["config"]["cnn"]["time_pooling"] == "mean"
+    assert json.loads((run / "labels.json").read_text())
+    assert "macro_f1_headline" in metrics["test"]

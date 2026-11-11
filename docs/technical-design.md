@@ -190,7 +190,7 @@ Tests use synthetic audio, so the suite runs without the dataset.
 
 ## 10. Provisional values to settle after D3
 
-Which CNN fold ships in the app. The A4 limits and the silence threshold were set from the dataset report (section 6).
+The app ships the CNN trained on fold 1 (S13a): the first fold, chosen by convention rather than by its test score. Its weights are a file on the v1.0 GitHub release; its config and labels are committed. The A4 limits and the silence threshold were set from the dataset report (section 6).
 
 ## 11. Second dataset (P2) seam
 

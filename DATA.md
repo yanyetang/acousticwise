@@ -10,9 +10,22 @@ No audio is committed to this repository (`data/` is git-ignored). This file rec
 | Bundle      | 12 Class - 5 Hours Each, v1.0 (released September 2026 per the site)                                                                                                             |
 | Origin      | Hydrophone recordings from Ocean Networks Canada (Strait of Georgia), labelled by vessel class from co-located AIS                                                               |
 | Licence     | CC-BY 4.0, as stated on the dataset site for this bundle. The bundle's own README does not state a licence.                                                                      |
-| Attribution | Ocean Networks Canada, and the UniqueShip authors. Cite the paper as directed on the site (the bundle README says "visit website for more information, paper, and how to cite"). |
+| Attribution | Ocean Networks Canada, and the UniqueShip authors: cite the paper below, as the site asks.                                                                                       |
 | Obtained    | 2026-10-09                                                                                                                                                                       |
 | Size        | 17.8 GB zipped (two parts), about 26 GB unzipped                                                                                                                                 |
+
+### Citation
+
+Hashemi, C., Stout, T., Hoogs, A. and Parham, J. "UniqueShip: Mitigating Data Leakage in Acoustic Ship Classification Benchmark Datasets." OCEANS 2026. [arXiv:2609.13659](https://arxiv.org/abs/2609.13659). The BibTeX given on the site (checked 2026-11-11; it has no pages or DOI yet):
+
+```bibtex
+@inproceedings{hashemi_2026_uniqueship,
+  author    = {Hashemi, Connor and Stout, Trevor and Hoogs, Anthony and Parham, Jason},
+  title     = {UniqueShip: Mitigating Data Leakage in Acoustic Ship Classification Benchmark Datasets},
+  booktitle = {OCEANS 2026},
+  year      = {2026}
+}
+```
 
 ### Checksums (SHA-256, computed 2026-10-09 on the downloaded files)
 

@@ -11,6 +11,7 @@ from acousticwise.train import train_baseline
 from tests.conftest import FREQS, tone
 
 APP = Path(__file__).parents[1] / "app" / "streamlit_app.py"
+COMMITTED_CNN_RUN = Path(__file__).parents[1] / "artifacts/runs/r2-cnn/cnn_fold1_20261025-145517"
 
 
 def test_the_app_imports_only_inference():
@@ -157,3 +158,18 @@ def test_a_missing_run_folder_shows_an_error_banner_not_a_traceback(monkeypatch,
     assert not at.exception
     assert len(at.error) == 1
     assert "no-such-run" in at.error[0].value
+
+
+def test_a_run_without_its_weights_shows_the_download_step(monkeypatch, tmp_path):
+    # A fresh clone: the run's config and labels are committed, its weights are not.
+    run = tmp_path / "cnn_fold1_run"
+    run.mkdir()
+    for name in ("config.json", "labels.json"):
+        (run / name).write_text((COMMITTED_CNN_RUN / name).read_text())
+
+    at = open_app(monkeypatch, str(run))
+
+    assert not at.exception
+    assert len(at.error) == 1
+    banner = at.error[0].value.lower()
+    assert "download" in banner and "release" in banner

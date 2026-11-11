@@ -130,3 +130,16 @@ uv run python -m acousticwise.compare "Random forest=summary_random_forest.json"
 ```
 
 `--cache-dir` is needed only for runs trained on another machine, whose `config.json` records that machine's cache path. Training on a GPU is not bit-for-bit repeatable, so a retrain is expected to match within the ±2 point tolerance of the reproducibility gate, not exactly.
+
+## Reproducibility check (S12, 2026-11-11)
+
+Tier 2 of the reproducibility gate (PRD, section 3): a retrain from committed code and the feature cache must match the reported test macro-F1 within ±1 point for the baseline and ±2 points for the CNN.
+
+| Retrain | Reported headline | Retrain headline | Difference | Bar |
+|---|---|---|---|---|
+| Random forest, folds 1–5, from a clean clone | 0.259 ± 0.045 | 0.259 ± 0.045 | 0.0 on every fold | ±1 |
+| CNN, fold 1, on Kaggle (code at `1e67dcc`) | 0.344 | 0.335 | −0.8 | ±2 |
+
+The CNN's all-class macro-F1 moved by −0.9 points (0.285 to 0.276) and its accuracy by −1.1 (0.324 to 0.313). Both retrains pass.
+
+The random forest repeats exactly. The CNN starts from the same weights (first-epoch loss 1.8342 against 1.8341), but some GPU operations add in a different order each run, so the runs drift apart and pick a different best epoch (13 against 25). The retrained run is in `artifacts/runs/s12-tier2/`.

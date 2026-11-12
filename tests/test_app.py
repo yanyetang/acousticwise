@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import streamlit
 from streamlit.testing.v1 import AppTest
 
 from acousticwise.train import train_baseline
@@ -173,3 +174,30 @@ def test_a_run_without_its_weights_shows_the_download_step(monkeypatch, tmp_path
     assert len(at.error) == 1
     banner = at.error[0].value.lower()
     assert "download" in banner and "release" in banner
+
+
+PAGE_WIDTH = 704  # px: the content width of Streamlit's default centered layout
+
+
+@pytest.mark.parametrize("seconds", [5.0, 300.0])
+def test_the_spectrogram_is_shown_at_a_readable_height(run_dir, write_wav, monkeypatch, seconds):
+    shown = []
+    original = streamlit.image
+
+    def spy(image, *args, **kwargs):
+        shown.append((np.asarray(image), kwargs.get("width")))
+        return original(image, *args, **kwargs)
+
+    monkeypatch.setattr(streamlit, "image", spy)
+    wav = wav_bytes(write_wav, tone(seconds, 32000, FREQS["tug"]))
+
+    at = classify(run_dir, wav, monkeypatch)
+
+    assert not at.exception
+    ((image, width),) = shown
+    rows, columns = image.shape[:2]
+    assert width == "stretch"  # fills the page width
+    # Stretched to the page width, the image is PAGE_WIDTH * rows / columns pixels tall.
+    assert PAGE_WIDTH * rows / columns >= 200
+    # 300 s is about 18,750 frames; a long upload is thinned on its time axis.
+    assert columns <= 4000

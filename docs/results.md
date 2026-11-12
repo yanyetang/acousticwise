@@ -131,7 +131,7 @@ uv run python -m acousticwise.compare "Random forest=summary_random_forest.json"
 
 `--cache-dir` is needed only for runs trained on another machine, whose `config.json` records that machine's cache path. Training on a GPU is not bit-for-bit repeatable, so a retrain is expected to match within the ±2 point tolerance of the reproducibility gate, not exactly.
 
-## Reproducibility check (S12, 2026-11-11)
+## Reproducibility check (S12 and S15, 2026-11-11)
 
 Tier 2 of the reproducibility gate (PRD, section 3): a retrain from committed code and the feature cache must match the reported test macro-F1 within ±1 point for the baseline and ±2 points for the CNN.
 
@@ -139,7 +139,10 @@ Tier 2 of the reproducibility gate (PRD, section 3): a retrain from committed co
 |---|---|---|---|---|
 | Random forest, folds 1–5, from a clean clone | 0.259 ± 0.045 | 0.259 ± 0.045 | 0.0 on every fold | ±1 |
 | CNN, fold 1, on Kaggle (code at `1e67dcc`) | 0.344 | 0.335 | −0.8 | ±2 |
+| CRNN, fold 1, on Kaggle (code at `1fdfe81`) | 0.320 | 0.341 | +2.1 | ±2 (S15 ticket; not a PRD gate) |
 
 The CNN's all-class macro-F1 moved by −0.9 points (0.285 to 0.276) and its accuracy by −1.1 (0.324 to 0.313). Both retrains pass.
 
 The random forest repeats exactly. The CNN starts from the same weights (first-epoch loss 1.8342 against 1.8341), but some GPU operations add in a different order each run, so the runs drift apart and pick a different best epoch (13 against 25). The retrained run is in `artifacts/runs/s12-tier2/`.
+
+**The CRNN misses its bar by 0.13 points, upward.** Its all-class macro-F1 moved by +1.9 points (0.265 to 0.284) and its accuracy by +1.6 (0.302 to 0.317); the kept epoch moved from 21 to 17. It is the same GPU drift as the CNN's, larger here: the LSTM's GPU kernels repeat less exactly than convolutions. The PRD's release gate covers only the baseline and the CNN, and the CRNN is not shipped, so v1.0 goes ahead; the bar is left as it was set. Its fold 1 score is better read as about 0.32 to 0.34 than as one number, which does not change the comparison: the CRNN still does not beat the CNN by more than the spread between folds. The retrained run is in `artifacts/runs/s15-tier2/`.

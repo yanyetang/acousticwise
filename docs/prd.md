@@ -1,8 +1,7 @@
 # AcousticWise v1.0 — Product Requirements Document
 
-- **Status:** Draft v2 for review (revised 2026-10-09: primary dataset changed from ShipsEar to UniqueShip)
+- **Status:** Shipped as v1.0 on 2026-11-11, with the baseline, CNN and CRNN (primary dataset changed from ShipsEar to UniqueShip on 2026-10-09)
 - **Date:** 2026-10-08
-- **Target release:** 2026-12-02 (baseline-only fallback decided 2026-11-25; see [Phase E · CNN and CRNN](https://github.com/yanyetang/acousticwise/issues/5))
 - **Source:** `AcousticWise v1.docx` (Definition of Done, plan, stretch objective)
 
 ## 1. Problem, audience, goals, non-goals
@@ -126,13 +125,11 @@ The dataset reviews behind these decisions are kept as local research notes and 
 - Unusually high numbers for dredger, pilotvessel or rescue are expected to reflect single-ship memorization, and the README says so.
 - The README states the claim as "generalizes to unseen vessels at the same hydrophone sites", not "works in the field" and not "works on other recording hardware".
 
-## 4. Timeline, risks, open questions
+## 4. Scope, risks, open questions
 
-### Timeline
+### Scope
 
-The schedule is tracked in the GitHub project board, with one issue per build slice and seven weekly sprints (the board's Sprint field) (set 2026-10-15, revised 2026-10-16; replaces the original 2026-10-31 timeline). On 2026-10-16 a one-week spike was added: a fold 1 preview of CNN vs CRNN for the 2026-10-22 review, which moved the rest of the schedule back one week. In short: first real baseline results in the week of Nov 12–18, a baseline-only v1.0 candidate by Nov 25, and v1.0 with the CNN and CRNN on **2026-12-02** at about 10 hours a week.
-
-**Scope cut-off:** P1 and P2 work starts only after v1.0. If the schedule slips, the CRNN is cut first, then the CNN (shipped as v1.1), before any other P0 item.
+The build was tracked as one GitHub issue per slice. P1 and P2 work starts only after v1.0. If the schedule had slipped, the CRNN would have been cut first, then the CNN (shipped as v1.1), before any other P0 item.
 
 ### Risks
 

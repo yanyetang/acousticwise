@@ -19,8 +19,6 @@ uv run acousticwise-app
 
 The model is the CNN trained on fold 1 (1 MB; the `shasum` line checks the download). Upload a WAV of at least 4 s; audio over 300 s is classified on its first 300 s. Set `ACOUSTICWISE_RUN_DIR` to serve another run.
 
-![A too-short upload gets a clear message](docs/images/app-error.png)
-
 ## How it works
 
 ```mermaid

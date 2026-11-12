@@ -9,11 +9,21 @@ from acousticwise.inference import InferenceError, InputError, Predictor
 
 FEW_VESSELS = {"rescue", "dredger", "pilotvessel"}
 PLOT_POINTS = 2000  # about a chart's width in pixels
+SPECTROGRAM_COLUMNS = 704  # the page width in pixels, so one column per pixel
+ROW_REPEAT = 4  # 64 mel bands drawn 256 px tall
 
 
 def plot_step(length: int) -> int:
     """Stride that thins a series of this length to about PLOT_POINTS for display."""
     return max(1, length // PLOT_POINTS)
+
+
+def spectrogram_image(mel: np.ndarray) -> np.ndarray:
+    """The log-mel as a fixed-size image: time resampled to the page width, bands enlarged."""
+    columns = np.linspace(0, mel.shape[1] - 1, SPECTROGRAM_COLUMNS).round().astype(int)
+    image = np.repeat(mel[:, columns], ROW_REPEAT, axis=0)
+    scaled = (image - image.min()) / (image.max() - image.min())
+    return np.flipud(scaled)  # low frequencies at the bottom
 
 
 @st.cache_resource
@@ -70,8 +80,6 @@ if st.button("Classify") and uploaded is not None:
         waveform = prediction.waveform[:: plot_step(len(prediction.waveform))]
         st.line_chart(waveform, x_label="Time (downsampled)", y_label="Amplitude")
 
-        mel = prediction.mel[:, :: plot_step(prediction.mel.shape[1])]
-        scaled = (mel - mel.min()) / (mel.max() - mel.min())
-        st.image(np.flipud(scaled), caption="Log-mel spectrogram", width="stretch")
+        st.image(spectrogram_image(prediction.mel), caption="Log-mel spectrogram", width="stretch")
     finally:
         tmp_path.unlink()

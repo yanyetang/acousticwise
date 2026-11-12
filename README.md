@@ -25,13 +25,21 @@ The model is the CNN trained on fold 1 (1 MB; the `shasum` line checks the downl
 
 ```mermaid
 flowchart LR
-    A[UniqueShip audio] -->|Kaggle| B[(Log-mel cache)]
-    B --> C[Baseline: MFCC + random forest]
-    B --> D[CNN / CRNN]
-    C --> E[Runs]
-    D --> E
-    E --> F[Evaluate on test]
-    E --> G[Predictor] --> H[Streamlit app]
+    subgraph Kaggle["Kaggle (the 26 GB audio stays here)"]
+        A[UniqueShip bundle] --> B[cache_features.py<br/>log-mel per 5 s clip]
+        B --> C[(Feature cache<br/>3.2 GB)]
+        C --> T2[CNN / CRNN training<br/>on a T4 GPU]
+    end
+    subgraph Laptop
+        C --> T1[Baseline training<br/>MFCC + random forest]
+        M[(Split manifest<br/>official folds)] --> T1
+        M --> T2
+        T1 --> R[(Runs: model, config,<br/>labels, metrics)]
+        T2 --> R
+        R --> E[evaluate / compare<br/>test split, once]
+        R --> P[Predictor]
+        P --> S[Streamlit app]
+    end
 ```
 
 Splits are the dataset's five official folds, disjoint by vessel. Design: [`docs/technical-design.md`](docs/technical-design.md).
@@ -40,11 +48,11 @@ Splits are the dataset's five official folds, disjoint by vessel. Design: [`docs
 
 Test macro-F1, mean ± std over five folds. "9 classes" leaves out the three with 1 to 19 training vessels.
 
-| Model | 9 classes | 12 classes | Accuracy |
-|---|---|---|---|
-| Random forest (MFCC) | 0.259 ± 0.045 | 0.218 ± 0.052 | 0.231 ± 0.073 |
-| **CNN (log-mel)** | **0.322 ± 0.044** | **0.272 ± 0.053** | **0.275 ± 0.092** |
-| CRNN (log-mel) | 0.315 ± 0.055 | 0.270 ± 0.070 | 0.273 ± 0.095 |
+| Model | 9 classes | 9 classes, folds 1–5 | 12 classes | Accuracy |
+|---|---|---|---|---|
+| Random forest (MFCC) | 0.259 ± 0.045 | 0.264, 0.189, 0.268, 0.260, 0.315 | 0.218 ± 0.052 | 0.231 ± 0.073 |
+| **CNN (log-mel)** | **0.322 ± 0.044** | 0.344, 0.260, 0.332, 0.301, 0.375 | **0.272 ± 0.053** | **0.275 ± 0.092** |
+| CRNN (log-mel) | 0.315 ± 0.055 | 0.320, 0.236, 0.337, 0.298, 0.386 | 0.270 ± 0.070 | 0.273 ± 0.095 |
 
 The CNN wins on all five folds; chance is about 0.11. Details: [`docs/results.md`](docs/results.md).
 

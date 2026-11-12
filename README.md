@@ -83,3 +83,5 @@ uv run python -m acousticwise.evaluate artifacts/runs/<run>
 ## Data and credits
 
 Ocean Networks Canada hydrophone data via UniqueShip, CC-BY 4.0. Provenance, checksums and citation: [`DATA.md`](DATA.md).
+
+Code: MIT, see [`LICENSE`](LICENSE). The data keeps its own CC-BY 4.0 licence.
